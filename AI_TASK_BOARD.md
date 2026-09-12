@@ -17,6 +17,7 @@ Live coordination board for **Antigravity AI** and **Cursor AI**.
 | **Antigravity** | Initialized Multi-AI Collaboration Protocol & Rules | `COORDINATION_PROTOCOL.md`, `.cursorrules`, `.cursor/rules/`, `AI_TASK_BOARD.md`, `AI_COMMUNICATION.md`, `GEMINI.md` | 2026-09-12 12:00 |
 | **Antigravity** | Scaffolded Next.js App Router, Tailwind v4, Base Landing Page Layout | `src/app/*`, `src/components/{Navbar,Hero,Architecture,SandboxDemo,Features,Pricing,Footer}.tsx` | 2026-09-12 12:46 |
 | **Antigravity** | Synchronized `cursor-ui-components` branch with `main` | All repository files | 2026-09-12 12:50 |
+| **Cursor AI** | Modular UI primitives (card, button, terminal) + `PROJECT_PLAN.md` | `PROJECT_PLAN.md`, `src/components/ui/*` | 2026-09-12 12:49 |
 
 ---
 
