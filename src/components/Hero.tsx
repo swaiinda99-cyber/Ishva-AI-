@@ -1,7 +1,8 @@
 'use client';
 
 import React from 'react';
-import { ArrowRight, Play, ShieldCheck, Zap, Sparkles, Terminal, CheckCircle2, Layers } from 'lucide-react';
+import { ArrowRight, ShieldCheck, Zap, Sparkles, Terminal as TerminalIcon, CheckCircle2, Layers } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export default function Hero() {
   return (
@@ -21,7 +22,7 @@ export default function Hero() {
               <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
             </span>
             <span className="text-xs font-medium text-slate-300 group-hover:text-white transition-colors">
-              Supervisor-Critic Agent Swarm Architecture is now live
+              Supervisor-Critic Multi-Agent Swarm is now live
             </span>
             <ArrowRight className="w-3.5 h-3.5 text-cyan-400 group-hover:translate-x-0.5 transition-transform" />
           </div>
@@ -29,32 +30,30 @@ export default function Hero() {
           {/* Main Headline */}
           <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-white leading-[1.1] mb-6">
             Build Autonomous Web Apps with{' '}
-            <span className="gradient-text-emerald block sm:inline">Ishwa AI</span>
+            <span className="gradient-text-emerald block sm:inline">Ishva AI</span>
           </h1>
 
           {/* Subtitle */}
           <p className="text-lg sm:text-xl text-slate-400 leading-relaxed max-w-2xl mx-auto mb-10 font-normal">
-            Deploy production-ready web applications from natural language. Ishwa AI orchestrates an elite{' '}
+            Deploy production-ready web applications from natural language. Ishva AI orchestrates an elite{' '}
             <span className="text-slate-200 font-semibold">Supervisor-Critic</span> swarm of AI agents that write, compile, unit-test, and self-heal code in real time.
           </p>
 
-          {/* CTA Buttons */}
+          {/* CTA Buttons with Cursor Primitives */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
-            <a
-              href="#pricing"
-              className="w-full sm:w-auto px-8 py-4 rounded-xl bg-gradient-to-r from-cyan-500 via-indigo-600 to-purple-600 hover:from-cyan-400 hover:to-purple-500 text-white font-semibold text-base shadow-xl shadow-cyan-500/25 hover:shadow-cyan-500/40 transition-all duration-300 flex items-center justify-center gap-2 group"
-            >
-              <Sparkles className="w-5 h-5 text-cyan-200 group-hover:rotate-12 transition-transform" />
-              Start Building Free
-              <ArrowRight className="w-4 h-4 text-white group-hover:translate-x-1 transition-transform" />
+            <a href="#pricing" className="w-full sm:w-auto">
+              <Button variant="primary" size="lg" className="w-full sm:w-auto">
+                <Sparkles className="w-5 h-5 text-cyan-200 group-hover:rotate-12 transition-transform" />
+                Start Building Free
+                <ArrowRight className="w-4 h-4" />
+              </Button>
             </a>
 
-            <a
-              href="#sandbox"
-              className="w-full sm:w-auto px-8 py-4 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 hover:text-white border border-white/[0.1] hover:border-white/[0.2] font-semibold text-base backdrop-blur-md transition-all duration-300 flex items-center justify-center gap-2.5 group"
-            >
-              <Terminal className="w-5 h-5 text-cyan-400" />
-              Explore Live Sandbox
+            <a href="#sandbox" className="w-full sm:w-auto">
+              <Button variant="secondary" size="lg" className="w-full sm:w-auto">
+                <TerminalIcon className="w-5 h-5 text-cyan-400" />
+                Explore Live Sandbox
+              </Button>
             </a>
           </div>
 
@@ -98,4 +97,3 @@ export default function Hero() {
     </section>
   );
 }
-

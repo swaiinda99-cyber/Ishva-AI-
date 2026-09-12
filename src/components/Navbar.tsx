@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Cpu, Sparkles, ArrowRight, Menu, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
@@ -30,7 +31,7 @@ export default function Navbar() {
             </div>
             <div className="flex flex-col">
               <span className="font-bold text-xl tracking-tight text-white flex items-center gap-1.5">
-                Ishwa <span className="text-cyan-400 font-extrabold">AI</span>
+                Ishva <span className="text-cyan-400 font-extrabold">AI</span>
                 <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
                   v2.0
                 </span>
@@ -70,16 +71,12 @@ export default function Navbar() {
               <span className="text-[10px] px-1.5 py-0.2 rounded bg-white/[0.08] text-slate-400">★ Star</span>
             </a>
 
-            <a
-              href="#pricing"
-              className="relative inline-flex items-center justify-center p-0.5 overflow-hidden rounded-xl font-medium group"
-            >
-              <span className="w-full h-full bg-gradient-to-br from-cyan-500 via-indigo-600 to-purple-600 group-hover:from-cyan-400 group-hover:to-pink-500 absolute"></span>
-              <span className="relative px-4 py-2 transition-all ease-out bg-[#090d16] rounded-[10px] group-hover:bg-opacity-0 duration-300 text-xs text-white font-semibold flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-cyan-400 group-hover:text-white" />
+            <a href="#pricing">
+              <Button variant="primary" size="sm">
+                <Sparkles className="w-3.5 h-3.5" />
                 Start Building Free
-                <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:translate-x-1 group-hover:text-white transition-transform" />
-              </span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Button>
             </a>
           </div>
 
@@ -130,9 +127,11 @@ export default function Navbar() {
             <a
               href="#pricing"
               onClick={() => setMobileMenuOpen(false)}
-              className="mt-2 w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-cyan-500 to-indigo-600 text-white font-medium text-center text-sm shadow-lg shadow-cyan-500/25"
+              className="mt-2 w-full"
             >
-              Start Building Free
+              <Button variant="primary" size="md" className="w-full">
+                Start Building Free
+              </Button>
             </a>
           </div>
         )}
