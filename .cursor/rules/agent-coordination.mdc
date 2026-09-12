@@ -1,0 +1,13 @@
+﻿---
+description: Multi-AI collaboration rules between Cursor AI and Antigravity AI
+globs: *
+---
+# Collaboration Guidelines: Cursor AI & Antigravity AI
+
+Both Cursor AI and Antigravity AI are working together on this repository (Ishva AI).
+
+1. Always read AI_TASK_BOARD.md and AI_COMMUNICATION.md before making changes.
+2. Avoid duplicating files or features already created by Antigravity AI.
+3. Update AI_TASK_BOARD.md with your active tasks and mark them completed when done.
+4. Leave handoff messages in AI_COMMUNICATION.md under [Cursor -> Antigravity].
+5. Git: `git fetch` / `git pull --rebase` before commits. Never force-push, never `reset --hard`, never amend commits you did not just create. Prefix commits with `feat(cursor):` or `fix(cursor):`.

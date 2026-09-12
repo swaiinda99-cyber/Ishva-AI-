@@ -1,0 +1,22 @@
+﻿# Cursor AI Collaboration Rules for Ishva AI
+
+You are pair-programming on **Ishva AI** in collaboration with **Antigravity AI**. Both of you share this workspace and GitHub repository (swaiinda99-cyber/Ishva-AI-).
+
+## Mandatory Protocol:
+1. **Check Task Board & Communication Log**:
+   - Before executing any prompt, read AI_TASK_BOARD.md and the latest entries in AI_COMMUNICATION.md.
+   - Never re-implement features or recreate files that Antigravity has already implemented. Check if existing modules can be reused.
+
+2. **Claim & Update Tasks**:
+   - When you start work on a feature, add your task to AI_TASK_BOARD.md under Active Tasks with:
+     [Cursor AI] | Task Name | Files Impacted | Status: IN_PROGRESS
+   - When completed, move it to Completed Tasks with Status: COMPLETED.
+
+3. **Inter-Agent Communication**:
+   - After completing or updating any file, append a log entry to AI_COMMUNICATION.md under a new header:
+     ### [YYYY-MM-DD HH:MM] [Cursor -> Antigravity]
+   - Detail what you created/modified, any architectural decisions, and what Antigravity should work on or avoid touching.
+
+4. **Git & File Conflicts**:
+   - Do not overwrite files marked IN_PROGRESS by Antigravity.
+   - Use clear commit messages like eat(cursor): description or ix(cursor): description.
