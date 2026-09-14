@@ -1,0 +1,117 @@
+﻿/* ============================================================
+   CSS CUSTOM PROPERTIES — Ishva AI Design System
+   All values must reference these variables. Never hardcode.
+   ============================================================ */
+
+:root {
+  /* --- Brand Colors --- */
+  --color-brand-primary: #7c6ef0;
+  --color-brand-primary-light: #9d93f5;
+  --color-brand-primary-dark: #5a4fd4;
+  --color-brand-secondary: #22d3ee;
+  --color-brand-secondary-light: #67e8f9;
+  --color-brand-accent: #f472b6;
+
+  /* --- Background Layers --- */
+  --color-bg-base: #0a0a0f;
+  --color-bg-surface: #12121a;
+  --color-bg-elevated: #1a1a26;
+  --color-bg-overlay: #22222e;
+  --color-bg-hover: #2a2a38;
+  --color-bg-active: #32324a;
+
+  /* --- Text --- */
+  --color-text-primary: #f0f0ff;
+  --color-text-secondary: #a8a8c0;
+  --color-text-muted: #6060a0;
+  --color-text-disabled: #404060;
+  --color-text-inverse: #0a0a0f;
+
+  /* --- Borders --- */
+  --color-border-subtle: rgba(120, 110, 240, 0.12);
+  --color-border-default: rgba(120, 110, 240, 0.25);
+  --color-border-strong: rgba(120, 110, 240, 0.5);
+  --color-border-focus: var(--color-brand-primary);
+
+  /* --- Status Colors --- */
+  --color-success: #34d399;
+  --color-warning: #fbbf24;
+  --color-error: #f87171;
+  --color-info: #60a5fa;
+
+  /* --- Glass Morphism --- */
+  --glass-bg: rgba(18, 18, 26, 0.85);
+  --glass-border: rgba(120, 110, 240, 0.2);
+  --glass-blur: blur(20px);
+
+  /* --- Gradients --- */
+  --gradient-brand: linear-gradient(135deg, #7c6ef0 0%, #22d3ee 100%);
+  --gradient-brand-soft: linear-gradient(135deg, rgba(124, 110, 240, 0.15) 0%, rgba(34, 211, 238, 0.08) 100%);
+  --gradient-surface: linear-gradient(180deg, #12121a 0%, #0a0a0f 100%);
+  --gradient-glow: radial-gradient(ellipse at top, rgba(124, 110, 240, 0.15) 0%, transparent 70%);
+
+  /* --- Spacing Scale (8px base) --- */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+  --space-3xl: 64px;
+
+  /* --- Border Radius --- */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-2xl: 28px;
+  --radius-full: 9999px;
+
+  /* --- Typography Scale --- */
+  --font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-size-xs: 11px;
+  --font-size-sm: 13px;
+  --font-size-base: 15px;
+  --font-size-md: 16px;
+  --font-size-lg: 18px;
+  --font-size-xl: 22px;
+  --font-size-2xl: 28px;
+  --font-size-3xl: 36px;
+
+  --font-weight-light: 300;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-extrabold: 800;
+
+  --line-height-tight: 1.2;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.7;
+
+  /* --- Shadows --- */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.6);
+  --shadow-xl: 0 16px 64px rgba(0, 0, 0, 0.7);
+  --shadow-brand: 0 0 20px rgba(124, 110, 240, 0.35);
+  --shadow-brand-strong: 0 0 40px rgba(124, 110, 240, 0.5);
+  --shadow-glow-cyan: 0 0 20px rgba(34, 211, 238, 0.3);
+
+  /* --- Transitions --- */
+  --transition-fast: 120ms ease;
+  --transition-base: 200ms ease;
+  --transition-slow: 350ms ease;
+  --transition-spring: 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* --- Z-index Scale --- */
+  --z-dropdown: 100;
+  --z-modal: 200;
+  --z-nav: 300;
+  --z-toast: 400;
+  --z-overlay: 500;
+
+  /* --- Sidebar Width --- */
+  --sidebar-width: 260px;
+  --topnav-height: 60px;
+}
