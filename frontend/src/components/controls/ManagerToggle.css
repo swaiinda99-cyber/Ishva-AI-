@@ -1,0 +1,81 @@
+﻿/* ManagerToggle.css */
+.manager-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border-subtle);
+  background: var(--color-bg-overlay);
+  transition: all var(--transition-base);
+}
+
+.manager-toggle--on {
+  border-color: rgba(124, 110, 240, 0.4);
+  background: rgba(124, 110, 240, 0.08);
+  box-shadow: 0 0 12px rgba(124, 110, 240, 0.1);
+}
+
+.manager-toggle__label-group {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  min-width: 0;
+}
+
+.manager-toggle__icon { font-size: 18px; flex-shrink: 0; }
+
+.manager-toggle__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.manager-toggle__name {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  white-space: nowrap;
+}
+
+.manager-toggle__status {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+.manager-toggle--on .manager-toggle__status { color: var(--color-brand-primary-light); }
+
+/* Toggle switch */
+.manager-toggle__switch {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  border-radius: var(--radius-full);
+  border: none;
+  background: var(--color-bg-active);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  flex-shrink: 0;
+}
+
+.manager-toggle__switch--on {
+  background: var(--color-brand-primary);
+  box-shadow: var(--shadow-brand);
+}
+
+.manager-toggle__thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: var(--radius-full);
+  background: white;
+  transition: transform var(--transition-spring);
+  box-shadow: var(--shadow-sm);
+}
+
+.manager-toggle__switch--on .manager-toggle__thumb {
+  transform: translateX(20px);
+}

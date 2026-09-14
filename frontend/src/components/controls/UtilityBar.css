@@ -1,0 +1,42 @@
+﻿/* UtilityBar.css */
+.utility-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  flex-wrap: wrap;
+}
+
+.utility-bar__btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 10px;
+  background: var(--color-bg-overlay);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-full);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  font-family: var(--font-family);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  white-space: nowrap;
+}
+
+.utility-bar__btn:hover {
+  color: var(--utility-color, var(--color-brand-primary));
+  border-color: var(--utility-color, var(--color-brand-primary));
+  background: color-mix(in srgb, var(--utility-color, var(--color-brand-primary)) 10%, var(--color-bg-overlay));
+  box-shadow: 0 0 10px color-mix(in srgb, var(--utility-color, var(--color-brand-primary)) 20%, transparent);
+  transform: translateY(-1px);
+}
+
+.utility-bar__btn:active { transform: translateY(0); }
+
+.utility-bar__btn-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px; height: 14px;
+}
+.utility-bar__btn-icon svg { width: 14px; height: 14px; }
