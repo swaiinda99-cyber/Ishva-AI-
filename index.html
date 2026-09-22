@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Ishva AI — Autonomous Multi-Agent Operating System | Ekka Technologies</title>
-  <meta name="description" content="Next-generation multi-agent AI orchestration platform by Ekka Technologies. Zero-cost BYOK architecture with automated supervisor decomposition and worker reflection." />
+  <title>Ishva AI — Multi-Agent Autonomous Chat | Ekka Technologies</title>
+  <meta name="description" content="Next-generation conversational multi-agent AI orchestration platform by Ekka Technologies. Zero-cost BYOK architecture." />
 
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -19,184 +19,109 @@
 </head>
 <body>
 
-  <div class="app-container">
+  <div class="chat-app-shell">
 
-    <!-- 1. Header Navigation -->
-    <header class="header-nav">
+    <!-- 1. Sticky Navigation Header -->
+    <header class="chat-header">
       <div class="brand-wrapper">
         <div class="brand-logo">IA</div>
-        <div class="brand-info">
+        <div>
           <div class="brand-title">
-            ISHVA AI <span class="brand-version">v1.0-preview</span>
+            ISHVA AI <span class="brand-version">Multi-Agent</span>
           </div>
-          <div class="brand-subtitle">Ekka Technologies • Multi-Agent Orchestration</div>
         </div>
       </div>
 
       <div class="header-actions">
-        <div class="system-status-badge">
-          <div class="status-dot active"></div>
-          <span>Orchestrator Online</span>
-        </div>
+        <button class="btn-header-action" id="btnNewChat" title="Start a fresh conversation">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          <span>New Chat</span>
+        </button>
 
-        <button class="btn-vault" id="btnOpenVault" title="Open BYOK Key Vault">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-          </svg>
+        <button class="btn-header-action" id="btnOpenVault" title="Manage BYOK API Keys">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
           <span id="vaultIndicator">BYOK Setup</span>
         </button>
       </div>
     </header>
 
-    <!-- 2. Hero Section -->
-    <section class="hero-section">
-      <div class="hero-tag">
-        <span>⚡ Zero-Cost Cloud & BYOK Architecture</span>
-      </div>
-      <h1 class="hero-heading">One Prompt. Multiple Autonomous Agents.</h1>
-      <p class="hero-description">
-        Ishva decomposes your objective into specialized sub-tasks, assigns them to specialized AI models concurrently, and audits the code before synthesizing.
-      </p>
-    </section>
-
-    <!-- 3. Floating Command Console -->
-    <section class="command-console">
-      <textarea 
-        id="promptInput" 
-        class="prompt-textarea" 
-        placeholder="Describe what you want to build or analyze (e.g. Build a high-throughput streaming microservice with rate limiting)..."
-      ></textarea>
-
-      <!-- Presets -->
-      <div class="presets-container">
-        <span class="preset-title">Presets:</span>
-        <button class="preset-chip" data-prompt="Build a full-stack streaming microservice in Node.js with JWT authentication and Redis rate-limiting.">
-          🚀 Streaming Microservice
-        </button>
-        <button class="preset-chip" data-prompt="Perform an OWASP Top 10 security audit on our authentication routes and implement CSRF defenses.">
-          🛡️ OWASP Security Audit
-        </button>
-        <button class="preset-chip" data-prompt="Architect an algorithmic trading strategy engine combining technical momentum with real-time news sentiment.">
-          📈 Algo Trading Bot
-        </button>
-        <button class="preset-chip" data-prompt="Design an enterprise multi-agent workflow with supervisor decomposition and human-in-the-loop approval.">
-          🤖 Multi-Agent Pipeline
-        </button>
-      </div>
-
-      <!-- Controls -->
-      <div class="console-controls">
-        <div class="mode-selector">
-          <span class="mode-label">Mode:</span>
-          <button class="mode-pill" data-mode="fast">⚡ Fast</button>
-          <button class="mode-pill active" data-mode="balanced">⚖️ Balanced</button>
-          <button class="mode-pill" data-mode="deep">🧠 Deep Agentic</button>
-        </div>
-
-        <button class="btn-execute" id="btnExecute">
-          <span>⚡ Decompose & Execute</span>
-        </button>
-      </div>
-    </section>
-
-    <!-- 4. Multi-Agent Live Status Dashboard -->
-    <section class="agent-dashboard">
+    <!-- 2. Continuous Chat Stream -->
+    <main class="chat-stream" id="chatStream">
       
-      <!-- Supervisor Card -->
-      <div class="agent-card" id="agent-supervisor" style="--agent-accent: var(--accent-manager); --agent-glow: var(--accent-manager-glow);">
-        <div class="agent-card-header">
-          <div class="agent-identity">
-            <div class="agent-icon-box">🧠</div>
-            <div>
-              <div class="agent-name">Supervisor</div>
-              <div class="agent-model-tag">Ishva Manager • RTTO</div>
-            </div>
-          </div>
-          <span class="agent-status-badge">Standby</span>
+      <!-- Welcome Hero (Displayed when no messages in chat) -->
+      <div class="welcome-hero" id="welcomeHero">
+        <div class="welcome-badge">
+          <span>⚡ Ekka Technologies • Autonomous Multi-Agent OS</span>
         </div>
-        <div class="agent-log-preview">Ready to analyze prompt & decompose tasks...</div>
+        <h1 class="welcome-title">What would you like to build?</h1>
+        <p class="welcome-subtitle">
+          Ask any question or complex problem. Ishva's Supervisor Agent decomposes your objective into specialized sub-agents (Reasoning, High-Speed Code, and Security QA) and answers directly in this chat.
+        </p>
+
+        <!-- Starters Grid -->
+        <div class="starters-grid">
+          <div class="starter-card" data-prompt="Build a production-ready streaming microservice in Node.js with JWT authentication and Redis rate-limiting.">
+            <div class="starter-icon">🚀</div>
+            <div class="starter-heading">Streaming Microservice</div>
+            <div class="starter-desc">Full backend architecture with rate limits & auth</div>
+          </div>
+
+          <div class="starter-card" data-prompt="Perform an OWASP Top 10 security audit on our API routes and implement defensive headers and input sanitization.">
+            <div class="starter-icon">🛡️</div>
+            <div class="starter-heading">OWASP Security Audit</div>
+            <div class="starter-desc">Threat model & automated defense checklist</div>
+          </div>
+
+          <div class="starter-card" data-prompt="Design an algorithmic trading strategy engine combining technical momentum with real-time news sentiment.">
+            <div class="starter-icon">📈</div>
+            <div class="starter-heading">Algo Trading Bot</div>
+            <div class="starter-desc">Dual-stream quantitative and sentiment architecture</div>
+          </div>
+
+          <div class="starter-card" data-prompt="Explain how hierarchical multi-agent supervisor systems work and how to implement one in TypeScript.">
+            <div class="starter-icon">🤖</div>
+            <div class="starter-heading">Multi-Agent Systems</div>
+            <div class="starter-desc">Supervisor routing, consensus & reflection loops</div>
+          </div>
+        </div>
       </div>
 
-      <!-- Reasoning Card -->
-      <div class="agent-card" id="agent-reasoning" style="--agent-accent: var(--accent-reasoning); --agent-glow: rgba(129, 140, 248, 0.25);">
-        <div class="agent-card-header">
-          <div class="agent-identity">
-            <div class="agent-icon-box">🔬</div>
-            <div>
-              <div class="agent-name">Logic & Research</div>
-              <div class="agent-model-tag">Gemini 2.0 Flash • 1M Context</div>
-            </div>
-          </div>
-          <span class="agent-status-badge">Standby</span>
-        </div>
-        <div class="agent-log-preview">Awaiting architecture & reasoning instructions...</div>
-      </div>
+    </main>
 
-      <!-- Coder Card -->
-      <div class="agent-card" id="agent-coder" style="--agent-accent: var(--accent-coder); --agent-glow: var(--accent-coder-glow);">
-        <div class="agent-card-header">
-          <div class="agent-identity">
-            <div class="agent-icon-box">⚡</div>
-            <div>
-              <div class="agent-name">Coder Worker</div>
-              <div class="agent-model-tag">Groq LLaMA 3.3 • 300+ T/s</div>
-            </div>
-          </div>
-          <span class="agent-status-badge">Standby</span>
-        </div>
-        <div class="agent-log-preview">Ready for high-throughput code synthesis...</div>
-      </div>
-
-      <!-- Security QA Card -->
-      <div class="agent-card" id="agent-security" style="--agent-accent: var(--accent-security); --agent-glow: var(--accent-security-glow);">
-        <div class="agent-card-header">
-          <div class="agent-identity">
-            <div class="agent-icon-box">🛡️</div>
-            <div>
-              <div class="agent-name">Security Auditor</div>
-              <div class="agent-model-tag">OWASP & Reflection Guard</div>
-            </div>
-          </div>
-          <span class="agent-status-badge">Standby</span>
-        </div>
-        <div class="agent-log-preview">Armed to audit code for zero vulnerabilities...</div>
-      </div>
-
-    </section>
-
-    <!-- 5. Output & Synthesis Console -->
-    <section class="synthesis-console">
-      <div class="synthesis-nav">
-        <div class="tab-list">
-          <button class="tab-btn active" data-tab="synthesis">Unified Output</button>
-          <button class="tab-btn" data-tab="scratchpad">Agent Scratchpad</button>
-          <button class="tab-btn" data-tab="graph">Execution Graph</button>
-        </div>
-
-        <div class="action-btn-group">
-          <button class="action-btn" id="btnCopyOutput">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-            <span>Copy</span>
-          </button>
-          <button class="action-btn" id="btnDownloadMarkdown">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-            <span>Download .md</span>
+    <!-- 3. Pinned Floating Chat Dock (Bottom Input Bar) -->
+    <footer class="chat-dock">
+      <div class="dock-container">
+        <div class="dock-input-row">
+          <textarea 
+            id="chatInput" 
+            class="chat-input" 
+            placeholder="Ask Ishva anything... (e.g. Build a secure React authentication hook with bypass tests)"
+            rows="1"
+          ></textarea>
+          <button class="btn-send" id="btnSend" title="Send message (Enter)">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="22" y1="2" x2="11" y2="13"></line>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            </svg>
           </button>
         </div>
-      </div>
 
-      <div class="synthesis-body" id="outputContainer">
-        <div class="output-placeholder">
-          <div class="status-dot" style="width: 12px; height: 12px; background: var(--text-muted);"></div>
-          <p>Enter an objective above or click a preset to launch the multi-agent orchestration engine.</p>
+        <div class="dock-toolbar">
+          <div class="dock-modes">
+            <button class="mode-chip" data-mode="fast">⚡ Fast</button>
+            <button class="mode-chip active" data-mode="balanced">⚖️ Balanced</button>
+            <button class="mode-chip" data-mode="deep">🧠 Deep Agentic</button>
+          </div>
+          <div class="dock-disclaimer">
+            BYOK Zero-Knowledge • Powered by Gemini Flash & Groq LLaMA 3.3
+          </div>
         </div>
       </div>
-    </section>
+    </footer>
 
   </div>
 
-  <!-- 6. BYOK Key Vault Modal -->
+  <!-- 4. BYOK Key Vault Modal -->
   <div class="modal-backdrop" id="vaultModal">
     <div class="modal-card">
       <div class="modal-header">
@@ -209,7 +134,7 @@
       <div class="vault-security-notice">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
         <span>
-          <strong>Zero-Knowledge Security:</strong> Your keys are stored strictly in your browser's local storage and transmitted directly to Google/Groq over encrypted TLS. Zero server-side retention.
+          <strong>Zero-Knowledge Storage:</strong> Keys are saved exclusively in your browser's LocalStorage and sent directly to Google/Groq APIs. Ekka Technologies never sees your keys.
         </span>
       </div>
 
@@ -222,7 +147,7 @@
           <input type="password" id="geminiKeyInput" class="key-input" placeholder="AIzaSy..." />
         </div>
         <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.25rem;">
-          <button class="action-btn" id="btnTestGemini" type="button">Test Connection</button>
+          <button class="btn-header-action" id="btnTestGemini" type="button">Test Connection</button>
           <span id="geminiStatus" style="font-size: 0.75rem; font-family: var(--font-mono); color: var(--text-muted);">Untested</span>
         </div>
       </div>
@@ -236,7 +161,7 @@
           <input type="password" id="groqKeyInput" class="key-input" placeholder="gsk_..." />
         </div>
         <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.25rem;">
-          <button class="action-btn" id="btnTestGroq" type="button">Test Connection</button>
+          <button class="btn-header-action" id="btnTestGroq" type="button">Test Connection</button>
           <span id="groqStatus" style="font-size: 0.75rem; font-family: var(--font-mono); color: var(--text-muted);">Untested</span>
         </div>
       </div>

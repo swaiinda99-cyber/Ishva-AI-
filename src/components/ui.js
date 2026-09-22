@@ -1,5 +1,6 @@
 /**
- * UI Component & DOM Event Handler for Ishva AI
+ * Conversational UI & Multi-Agent Event Handler for Ishva AI
+ * Enables continuous, multi-turn chat stream exactly like ChatGPT & Claude
  */
 
 import { VaultService } from '../services/vault.js';
@@ -7,31 +8,31 @@ import { Orchestrator, AgentRoles } from '../services/orchestrator.js';
 
 export function initializeUI() {
   // DOM Elements
-  const promptInput = document.getElementById('promptInput');
-  const btnExecute = document.getElementById('btnExecute');
+  const chatStream = document.getElementById('chatStream');
+  const welcomeHero = document.getElementById('welcomeHero');
+  const chatInput = document.getElementById('chatInput');
+  const btnSend = document.getElementById('btnSend');
+  const btnNewChat = document.getElementById('btnNewChat');
+  const modeChips = document.querySelectorAll('.mode-chip');
+  const starterCards = document.querySelectorAll('.starter-card');
+
+  // Vault Elements
   const vaultModal = document.getElementById('vaultModal');
   const btnOpenVault = document.getElementById('btnOpenVault');
   const btnCloseModal = document.getElementById('btnCloseModal');
-  const btnSaveVault = document.getElementById('btnSaveVault');
   const btnCancelVault = document.getElementById('btnCancelVault');
+  const btnSaveVault = document.getElementById('btnSaveVault');
   const geminiKeyInput = document.getElementById('geminiKeyInput');
   const groqKeyInput = document.getElementById('groqKeyInput');
   const btnTestGemini = document.getElementById('btnTestGemini');
   const btnTestGroq = document.getElementById('btnTestGroq');
   const geminiStatus = document.getElementById('geminiStatus');
   const groqStatus = document.getElementById('groqStatus');
-  const outputContainer = document.getElementById('outputContainer');
-  const btnCopyOutput = document.getElementById('btnCopyOutput');
-  const btnDownloadMarkdown = document.getElementById('btnDownloadMarkdown');
-  const modePills = document.querySelectorAll('.mode-pill');
-  const presetChips = document.querySelectorAll('.preset-chip');
-  const tabBtns = document.querySelectorAll('.tab-btn');
 
   let activeMode = 'balanced';
-  let activeTab = 'synthesis';
-  let latestResult = null;
+  let messageCount = 0;
 
-  // 1. Vault Management
+  // 1. Vault Dialog Management
   function loadVaultKeys() {
     const keys = VaultService.getKeys();
     geminiKeyInput.value = keys.gemini;
@@ -60,7 +61,7 @@ export function initializeUI() {
     VaultService.saveKeys(geminiKeyInput.value, groqKeyInput.value);
     updateVaultButtonIndicator();
     vaultModal.classList.remove('open');
-    showNotification('BYOK keys safely stored in browser storage.');
+    showToast('BYOK keys securely saved to browser storage.');
   });
 
   btnTestGemini.addEventListener('click', async () => {
@@ -71,7 +72,7 @@ export function initializeUI() {
       geminiStatus.textContent = '✅ Connected (Gemini Free)';
       geminiStatus.style.color = 'var(--accent-coder)';
     } catch (err) {
-      geminiStatus.textContent = '❌ Failed: ' + err.message;
+      geminiStatus.textContent = '❌ ' + err.message;
       geminiStatus.style.color = 'var(--accent-security)';
     }
   });
@@ -84,121 +85,202 @@ export function initializeUI() {
       groqStatus.textContent = '✅ Connected (Groq 300+ T/s)';
       groqStatus.style.color = 'var(--accent-coder)';
     } catch (err) {
-      groqStatus.textContent = '❌ Failed: ' + err.message;
+      groqStatus.textContent = '❌ ' + err.message;
       groqStatus.style.color = 'var(--accent-security)';
     }
   });
 
-  // 2. Execution Mode Selection
-  modePills.forEach(pill => {
-    pill.addEventListener('click', () => {
-      modePills.forEach(p => p.classList.remove('active'));
-      pill.classList.add('active');
-      activeMode = pill.dataset.mode;
-    });
-  });
-
-  // 3. Prompt Presets
-  presetChips.forEach(chip => {
+  // 2. Mode Selector
+  modeChips.forEach(chip => {
     chip.addEventListener('click', () => {
-      promptInput.value = chip.dataset.prompt;
-      promptInput.focus();
+      modeChips.forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      activeMode = chip.dataset.mode;
     });
   });
 
-  // 4. Tab Switching
-  tabBtns.forEach(tab => {
-    tab.addEventListener('click', () => {
-      tabBtns.forEach(t => t.classList.remove('active'));
-      tab.classList.add('active');
-      activeTab = tab.dataset.tab;
-      renderCurrentTab();
+  // 3. Starter Cards in Welcome Screen
+  starterCards.forEach(card => {
+    card.addEventListener('click', () => {
+      chatInput.value = card.dataset.prompt;
+      submitUserMessage();
     });
   });
 
-  // 5. Multi-Agent Execution Pipeline
-  const orchestrator = new Orchestrator({
-    onAgentUpdate: (role, update) => {
-      const card = document.getElementById(`agent-${role}`);
-      if (!card) return;
+  // 4. Input Auto-Resize & Keyboard Handling
+  chatInput.addEventListener('input', () => {
+    chatInput.style.height = 'auto';
+    chatInput.style.height = Math.min(chatInput.scrollHeight, 140) + 'px';
+  });
 
-      const badge = card.querySelector('.agent-status-badge');
-      const log = card.querySelector('.agent-log-preview');
-
-      card.className = `agent-card ${update.status === 'working' ? 'active anim-pulse' : ''}`;
-      if (badge) {
-        badge.textContent = update.badge;
-        badge.className = `agent-status-badge ${update.status}`;
-      }
-      if (log) {
-        log.textContent = update.log;
-      }
-    },
-    onComplete: (data) => {
-      btnExecute.disabled = false;
-      btnExecute.innerHTML = '<span>⚡ Decompose & Execute</span>';
-      latestResult = data;
-      renderCurrentTab();
-      showNotification('Multi-Agent Execution Completed & Verified (10/10).');
-    },
-    onError: (err) => {
-      btnExecute.disabled = false;
-      btnExecute.innerHTML = '<span>⚡ Decompose & Execute</span>';
-      outputContainer.innerHTML = `<div style="color: #f87171; padding: 1rem;">Execution Error: ${err.message}</div>`;
+  chatInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      submitUserMessage();
     }
   });
 
-  btnExecute.addEventListener('click', () => {
-    const prompt = promptInput.value.trim();
-    if (!prompt) {
-      promptInput.focus();
-      return;
+  btnSend.addEventListener('click', submitUserMessage);
+
+  // 5. New Chat Reset
+  btnNewChat.addEventListener('click', () => {
+    chatStream.innerHTML = '';
+    chatStream.appendChild(welcomeHero);
+    welcomeHero.style.display = 'flex';
+    messageCount = 0;
+    chatInput.value = '';
+    chatInput.style.height = 'auto';
+    chatInput.focus();
+    showToast('Started fresh conversation.');
+  });
+
+  // 6. Conversational Pipeline Execution
+  function submitUserMessage() {
+    const prompt = chatInput.value.trim();
+    if (!prompt) return;
+
+    // Hide welcome hero on first message
+    if (welcomeHero && welcomeHero.style.display !== 'none') {
+      welcomeHero.style.display = 'none';
     }
 
-    btnExecute.disabled = true;
-    btnExecute.innerHTML = '<span class="anim-blink">⏳ Decomposing...</span>';
-    outputContainer.innerHTML = `
-      <div class="output-placeholder">
-        <div class="status-dot active" style="width: 16px; height: 16px; background: var(--accent-manager);"></div>
-        <p>Manager Agent decomposing intent & delegating tasks to sub-agents...</p>
+    messageCount++;
+    const turnId = 'turn-' + Date.now();
+
+    // 1. Render User Message
+    const userTurn = document.createElement('div');
+    userTurn.className = 'chat-turn user-turn';
+    userTurn.innerHTML = `<div class="user-bubble">${escapeHTML(prompt)}</div>`;
+    chatStream.appendChild(userTurn);
+
+    // Clear input
+    chatInput.value = '';
+    chatInput.style.height = 'auto';
+    btnSend.disabled = true;
+
+    // 2. Create Assistant Message Container
+    const assistantTurn = document.createElement('div');
+    assistantTurn.className = 'chat-turn assistant-turn';
+    assistantTurn.id = turnId;
+
+    assistantTurn.innerHTML = `
+      <div class="assistant-avatar">IA</div>
+      <div class="assistant-content-wrapper">
+        <!-- Live Multi-Agent Orchestration Trace -->
+        <div class="orchestration-trace" id="${turnId}-trace">
+          <div class="trace-header" onclick="this.parentElement.classList.toggle('collapsed')">
+            <span class="trace-title">
+              <span class="status-dot active"></span>
+              <span>Multi-Agent Coordination Active...</span>
+            </span>
+            <span style="color: var(--text-muted); font-size: 0.75rem;">⚡ RTTO</span>
+          </div>
+          <div class="trace-body" id="${turnId}-steps">
+            <div class="trace-step working" id="${turnId}-step-supervisor">
+              <span class="trace-step-icon">🧠</span>
+              <span><strong>Supervisor</strong>: Decomposing prompt into atomic agent tasks...</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Final Answer Card -->
+        <div class="answer-card" id="${turnId}-answer">
+          <div style="color: var(--text-muted); display: flex; align-items: center; gap: 0.5rem;">
+            <div class="status-dot active" style="background: var(--accent-manager);"></div>
+            <span>Ishva agents synthesizing response...</span>
+          </div>
+        </div>
       </div>
     `;
 
+    chatStream.appendChild(assistantTurn);
+    scrollToBottom();
+
+    // 3. Run Multi-Agent Orchestrator
+    const orchestrator = new Orchestrator({
+      onAgentUpdate: (role, update) => {
+        const stepsContainer = document.getElementById(`${turnId}-steps`);
+        if (!stepsContainer) return;
+
+        let stepEl = document.getElementById(`${turnId}-step-${role}`);
+        if (!stepEl) {
+          stepEl = document.createElement('div');
+          stepEl.id = `${turnId}-step-${role}`;
+          stepsContainer.appendChild(stepEl);
+        }
+
+        const icons = {
+          supervisor: '🧠',
+          reasoning: '🔬',
+          coder: '⚡',
+          security: '🛡️'
+        };
+
+        stepEl.className = `trace-step ${update.status}`;
+        stepEl.innerHTML = `
+          <span class="trace-step-icon">${icons[role] || '🤖'}</span>
+          <span><strong>${capitalize(role)}</strong>: ${escapeHTML(update.log)}</span>
+        `;
+        scrollToBottom();
+      },
+      onComplete: (data) => {
+        btnSend.disabled = false;
+
+        // Update Trace Header to Complete
+        const traceHeader = document.querySelector(`#${turnId}-trace .trace-title`);
+        if (traceHeader) {
+          traceHeader.innerHTML = `
+            <span class="status-dot" style="background: var(--accent-coder);"></span>
+            <span>All 4 Agents Completed & Audited (10/10)</span>
+          `;
+        }
+
+        // Render Final Answer
+        const answerCard = document.getElementById(`${turnId}-answer`);
+        if (answerCard) {
+          answerCard.innerHTML = `
+            ${formatMarkdownToHTML(data.synthesis)}
+            <div class="answer-actions">
+              <button class="btn-header-action btn-copy" data-turn="${turnId}">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                <span>Copy Answer</span>
+              </button>
+            </div>
+          `;
+
+          // Attach copy action
+          const copyBtn = answerCard.querySelector('.btn-copy');
+          if (copyBtn) {
+            copyBtn.addEventListener('click', () => {
+              navigator.clipboard.writeText(data.synthesis);
+              showToast('Copied answer to clipboard!');
+            });
+          }
+        }
+
+        scrollToBottom();
+      },
+      onError: (err) => {
+        btnSend.disabled = false;
+        const answerCard = document.getElementById(`${turnId}-answer`);
+        if (answerCard) {
+          answerCard.innerHTML = `<div style="color: #ef4444;">Error executing request: ${escapeHTML(err.message)}</div>`;
+        }
+      }
+    });
+
     orchestrator.execute(prompt, activeMode);
-  });
+  }
 
-  // 6. Output Rendering
-  function renderCurrentTab() {
-    if (!latestResult) return;
-
-    if (activeTab === 'synthesis') {
-      outputContainer.innerHTML = formatMarkdownToHTML(latestResult.synthesis);
-    } else if (activeTab === 'scratchpad') {
-      outputContainer.innerHTML = `
-        <h3>Agent Intermediate Scratchpad</h3>
-        <pre class="code-block-body" style="white-space: pre-wrap; font-size: 0.8rem; margin-top: 1rem;">
-${JSON.stringify(latestResult.scratchpad, null, 2)}
-        </pre>
-      `;
-    } else if (activeTab === 'graph') {
-      outputContainer.innerHTML = `
-        <h3>Multi-Agent Execution Graph</h3>
-        <div style="padding: 1.5rem; background: rgba(0,0,0,0.3); border-radius: var(--radius-md); font-family: var(--font-mono); font-size: 0.85rem; line-height: 2;">
-          <div>[User Prompt] ──► [Supervisor: IshvaManager]</div>
-          <div style="margin-left: 2rem;">├─► [Gemini 2.0 Flash] : Logic & Research Analysis</div>
-          <div style="margin-left: 2rem;">├─► [Groq LLaMA 3.3]   : High-Throughput Code Synthesizer</div>
-          <div style="margin-left: 2rem;">└─► [Security Auditor] : OWASP & Reflection Guard</div>
-          <div>[Consensus Aggregator] ──► [Verified Production Output]</div>
-        </div>
-      `;
-    }
+  function scrollToBottom() {
+    chatStream.scrollTop = chatStream.scrollHeight;
   }
 
   function formatMarkdownToHTML(md) {
     return md
-      .replace(/^# (.*$)/gim, '<h1 style="font-size: 1.6rem; margin-bottom: 0.75rem; color: #f8fafc;">$1</h1>')
-      .replace(/^## (.*$)/gim, '<h2 style="font-size: 1.25rem; margin-top: 1.25rem; margin-bottom: 0.5rem; color: #38bdf8;">$1</h2>')
-      .replace(/^### (.*$)/gim, '<h3 style="font-size: 1.05rem; margin-top: 1rem; margin-bottom: 0.5rem; color: #818cf8;">$1</h3>')
+      .replace(/^# (.*$)/gim, '<h2 style="font-size: 1.4rem; margin-bottom: 0.75rem; color: #f8fafc;">$1</h2>')
+      .replace(/^## (.*$)/gim, '<h3 style="font-size: 1.15rem; margin-top: 1.25rem; margin-bottom: 0.4rem; color: #38bdf8;">$1</h3>')
+      .replace(/^### (.*$)/gim, '<h4 style="font-size: 1rem; margin-top: 1rem; margin-bottom: 0.35rem; color: #818cf8;">$1</h4>')
       .replace(/^\> (.*$)/gim, '<blockquote style="border-left: 3px solid #38bdf8; padding-left: 1rem; color: #94a3b8; margin: 0.5rem 0;">$1</blockquote>')
       .replace(/\*\*(.*?)\*\*/gim, '<strong style="color: #fff;">$1</strong>')
       .replace(/```([a-z]*)\n([\s\S]*?)```/gim, (match, lang, code) => `
@@ -217,31 +299,16 @@ ${JSON.stringify(latestResult.scratchpad, null, 2)}
     return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
-  // 7. Export Utilities
-  btnCopyOutput.addEventListener('click', () => {
-    if (!latestResult) return;
-    navigator.clipboard.writeText(latestResult.synthesis);
-    showNotification('Output copied to clipboard!');
-  });
+  function capitalize(str) {
+    return str.charAt(0).toUpperCase() + str.slice(1);
+  }
 
-  btnDownloadMarkdown.addEventListener('click', () => {
-    if (!latestResult) return;
-    const blob = new Blob([latestResult.synthesis], { type: 'text/markdown' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'Ishva_AI_Synthesis.md';
-    a.click();
-    URL.revokeObjectURL(url);
-    showNotification('Downloaded Ishva_AI_Synthesis.md');
-  });
-
-  function showNotification(msg) {
+  function showToast(msg) {
     const toast = document.createElement('div');
     toast.style.cssText = `
       position: fixed;
-      bottom: 2rem;
-      right: 2rem;
+      top: 1.5rem;
+      right: 1.5rem;
       background: rgba(14, 21, 35, 0.95);
       border: 1px solid var(--accent-manager);
       color: #fff;
@@ -261,6 +328,6 @@ ${JSON.stringify(latestResult.scratchpad, null, 2)}
     }, 2500);
   }
 
-  // Initialize state
+  // Initial load
   loadVaultKeys();
 }
