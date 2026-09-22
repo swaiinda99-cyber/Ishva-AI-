@@ -10,6 +10,7 @@
 
 import { VaultService } from '../services/vault.js';
 import { Orchestrator } from '../services/orchestrator.js';
+import { init3DExperience, getNeuralCore, NeuralCore3D } from './neuralCore3D.js';
 
 export function initializeUI() {
   // Chat DOM Elements
@@ -60,6 +61,40 @@ export function initializeUI() {
   const btnTestGroq = document.getElementById('btnTestGroq');
   const geminiStatus = document.getElementById('geminiStatus');
   const groqStatus = document.getElementById('groqStatus');
+
+  // 3D Neural Core Elements
+  const btnToggle3DCore = document.getElementById('btnToggle3DCore');
+  const core3DModal = document.getElementById('core3DModal');
+  const btnClose3DModal = document.getElementById('btnClose3DModal');
+  const btnClose3DModalBtn = document.getElementById('btnClose3DModalBtn');
+  const coreModeBtns = document.querySelectorAll('.btn-core-mode');
+
+  // Initialize WebGL 3D Experience (Interactive Core + Starfield Background)
+  const { neuralCore } = init3DExperience();
+
+  let modalCoreInstance = null;
+  if (btnToggle3DCore && core3DModal) {
+    btnToggle3DCore.addEventListener('click', () => {
+      core3DModal.classList.add('open');
+      if (!modalCoreInstance && document.getElementById('modal3dContainer')) {
+        modalCoreInstance = new NeuralCore3D('modal3dContainer');
+      }
+      if (modalCoreInstance) modalCoreInstance.triggerShockwave();
+      if (neuralCore) neuralCore.triggerShockwave();
+    });
+    if (btnClose3DModal) btnClose3DModal.addEventListener('click', () => core3DModal.classList.remove('open'));
+    if (btnClose3DModalBtn) btnClose3DModalBtn.addEventListener('click', () => core3DModal.classList.remove('open'));
+  }
+
+  coreModeBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      coreModeBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      if (neuralCore) {
+        neuralCore.setMode(btn.dataset.coreMode);
+      }
+    });
+  });
 
   let activeMode = 'balanced';
   let stagedFiles = [];
@@ -347,6 +382,8 @@ export function initializeUI() {
       welcomeHero.style.display = 'none';
     }
 
+    if (neuralCore) neuralCore.setProcessingState(true);
+
     const turnId = 'turn-' + Date.now();
 
     // 1. Render User Message with any attached files/images
@@ -471,6 +508,7 @@ export function initializeUI() {
       onComplete: (data) => {
         btnSend.disabled = false;
         isStreaming = false;
+        if (neuralCore) neuralCore.setProcessingState(false);
 
         const headerEl = document.getElementById(`${turnId}-status-header`);
         if (headerEl) headerEl.innerHTML = `<span>&#x2705; Ishva verified &amp; completed (10/10)</span>`;
@@ -529,6 +567,7 @@ export function initializeUI() {
         btnSend.disabled = false;
         isStreaming = false;
         streamBuffer = '';
+        if (neuralCore) neuralCore.setProcessingState(false);
         const answerCard = document.getElementById(`${turnId}-answer`);
         if (answerCard) {
           answerCard.innerHTML = `<div class="error-card"><span>&#x26A0;&#xFE0F;</span><div><strong>Error</strong><br/><span>${escapeHTML(err.message)}</span></div></div>`;

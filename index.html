@@ -19,7 +19,10 @@
 </head>
 <body>
 
-  <!-- Animated 3D Ambient Orbs -->
+  <!-- Fullscreen 3D Ambient WebGL Particle Constellation -->
+  <canvas id="ambientBgCanvas" class="ambient-3d-bg"></canvas>
+
+  <!-- Animated 3D Ambient Blur Orbs -->
   <div class="ambient-orb orb-cyan"></div>
   <div class="ambient-orb orb-purple"></div>
 
@@ -39,6 +42,12 @@
       </div>
 
       <div class="header-actions">
+        <!-- 3D Neural Core Hologram Toggle Button -->
+        <button class="btn-header-action btn-3d-glow" id="btnToggle3DCore" title="Toggle 3D Multi-Agent Holographic Visualizer">
+          <span class="pulse-dot-3d"></span>
+          <span>3D Core</span>
+        </button>
+
         <button class="btn-header-action" id="btnNewChat" title="Start a fresh conversation">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
           <span>New Chat</span>
@@ -74,6 +83,23 @@
         <p class="welcome-subtitle">
           Ask any question or complex problem. Ishva's Supervisor Agent decomposes your objective into specialized sub-agents and answers directly in this chat.
         </p>
+
+        <!-- Interactive 3D Neural Agent Core Hologram -->
+        <div class="hero-3d-section">
+          <div class="hero-3d-container" id="hero3dContainer" title="Drag to rotate 3D core in 360° • Click to emit pulse wave">
+            <div class="core-interactive-hint">
+              <span class="hint-pulse"></span>
+              <span>3D Multi-Agent Core • Drag to Rotate • Click to Pulse</span>
+            </div>
+          </div>
+          
+          <!-- 3D Visualization Modes -->
+          <div class="core-modes-bar">
+            <button class="btn-core-mode active" data-core-mode="neural">🔮 Neural Core</button>
+            <button class="btn-core-mode" data-core-mode="network">🌐 Agent Synapses</button>
+            <button class="btn-core-mode" data-core-mode="vortex">🌀 Quantum Vortex</button>
+          </div>
+        </div>
 
         <!-- Starters Grid -->
         <div class="starters-grid">
@@ -301,6 +327,33 @@
 
       <div class="modal-footer">
         <button class="btn-primary" id="btnCloseAboutModalBtn">Got it, thanks!</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 7. 3D Neural Core HUD Modal (Can be summoned anytime from header) -->
+  <div class="modal-backdrop" id="core3DModal">
+    <div class="modal-card modal-3d-card" style="max-width: 720px; width: 95%;">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span>🔮 3D Multi-Agent Holographic Core</span>
+        </div>
+        <button class="btn-close-modal" id="btnClose3DModal">&times;</button>
+      </div>
+      <div class="hud-3d-body">
+        <div class="hud-3d-canvas-container" id="modal3dContainer">
+          <!-- 3D Hologram canvas mounts here when opened in modal mode -->
+        </div>
+        <div class="hud-agent-legend">
+          <div class="legend-item"><span class="legend-dot" style="background: #818cf8;"></span> <strong>Supervisor</strong>: Intent & Prompt Decomposition</div>
+          <div class="legend-item"><span class="legend-dot" style="background: #38bdf8;"></span> <strong>Gemini 2.0 Flash</strong>: Multimodal Reasoning & Q&A</div>
+          <div class="legend-item"><span class="legend-dot" style="background: #10b981;"></span> <strong>Groq LLaMA 3.3</strong>: 300+ T/s Code Generation</div>
+          <div class="legend-item"><span class="legend-dot" style="background: #f59e0b;"></span> <strong>Pollinations AI</strong>: Visual Synthesis</div>
+        </div>
+      </div>
+      <div class="modal-footer" style="justify-content: space-between;">
+        <span style="font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-mono);">WebGL 60FPS • Click & Drag 360° Interaction</span>
+        <button class="btn-primary" id="btnClose3DModalBtn">Close Hologram</button>
       </div>
     </div>
   </div>
