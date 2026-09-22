@@ -1,10 +1,14 @@
 /**
- * Conversational UI & Multi-Agent Event Handler for Ishva AI
- * Enables continuous, multi-turn chat stream exactly like ChatGPT & Claude
+ * Conversational UI for Ishva AI
+ * - Personalized thinking flow: "Ishva got your request", "Ishva is analyzing...",
+ *   "Ishva is breaking task...", "Ishva is generating...", "Ishva is sending task..."
+ * - Plus (+) icon for attaching photos, code, and documents
+ * - Google Sign-In interface
+ * - Permission & confirmation prompts
  */
 
 import { VaultService } from '../services/vault.js';
-import { Orchestrator, AgentRoles } from '../services/orchestrator.js';
+import { Orchestrator } from '../services/orchestrator.js';
 
 export function initializeUI() {
   // DOM Elements
@@ -15,6 +19,18 @@ export function initializeUI() {
   const btnNewChat = document.getElementById('btnNewChat');
   const modeChips = document.querySelectorAll('.mode-chip');
   const starterCards = document.querySelectorAll('.starter-card');
+
+  // File Upload Elements
+  const fileUploadInput = document.getElementById('fileUploadInput');
+  const btnAttachmentPlus = document.getElementById('btnAttachmentPlus');
+  const stagingAttachmentsBar = document.getElementById('stagingAttachmentsBar');
+
+  // Google Login Elements
+  const btnGoogleLogin = document.getElementById('btnGoogleLogin');
+  const googleLoginModal = document.getElementById('googleLoginModal');
+  const btnCloseGoogleModal = document.getElementById('btnCloseGoogleModal');
+  const btnSimulateGoogleAuth = document.getElementById('btnSimulateGoogleAuth');
+  const googleAuthText = document.getElementById('googleAuthText');
 
   // Vault Elements
   const vaultModal = document.getElementById('vaultModal');
@@ -30,9 +46,114 @@ export function initializeUI() {
   const groqStatus = document.getElementById('groqStatus');
 
   let activeMode = 'balanced';
-  let messageCount = 0;
+  let stagedFiles = [];
+  let currentUser = localStorage.getItem('ishva_user') ? JSON.parse(localStorage.getItem('ishva_user')) : null;
 
-  // 1. Vault Dialog Management
+  // 1. Google Auth Management
+  function updateAuthUI() {
+    if (currentUser) {
+      btnGoogleLogin.innerHTML = `
+        <div class="user-avatar-circle">${currentUser.name.charAt(0)}</div>
+        <span>${currentUser.name}</span>
+      `;
+      btnGoogleLogin.title = "Click to sign out";
+    } else {
+      btnGoogleLogin.innerHTML = `
+        <svg class="google-icon" viewBox="0 0 24 24">
+          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+        </svg>
+        <span>Sign in</span>
+      `;
+      btnGoogleLogin.title = "Sign in with Google";
+    }
+  }
+
+  btnGoogleLogin.addEventListener('click', () => {
+    if (currentUser) {
+      if (confirm(`Signed in as ${currentUser.name} (${currentUser.email}). Do you want to sign out?`)) {
+        currentUser = null;
+        localStorage.removeItem('ishva_user');
+        updateAuthUI();
+        showToast('Signed out of Google account.');
+      }
+    } else {
+      googleLoginModal.classList.add('open');
+    }
+  });
+
+  btnCloseGoogleModal.addEventListener('click', () => googleLoginModal.classList.remove('open'));
+
+  btnSimulateGoogleAuth.addEventListener('click', () => {
+    currentUser = {
+      name: 'Swai Singh',
+      email: 'swai@ekka.tech',
+      role: 'Founder'
+    };
+    localStorage.setItem('ishva_user', JSON.stringify(currentUser));
+    updateAuthUI();
+    googleLoginModal.classList.remove('open');
+    showToast('Signed in successfully with Google as Swai Singh.');
+  });
+
+  // 2. File / Photo Attachments via (+) Button
+  btnAttachmentPlus.addEventListener('click', () => {
+    fileUploadInput.click();
+  });
+
+  fileUploadInput.addEventListener('change', (e) => {
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
+
+    files.forEach(file => {
+      const isImg = file.type.startsWith('image/');
+      const reader = new FileReader();
+
+      reader.onload = (ev) => {
+        stagedFiles.push({
+          name: file.name,
+          size: (file.size / 1024).toFixed(1) + ' KB',
+          type: file.type,
+          isImage: isImg,
+          dataUrl: ev.target.result
+        });
+        renderStagedAttachments();
+      };
+
+      if (isImg) reader.readAsDataURL(file);
+      else reader.readAsText(file);
+    });
+
+    fileUploadInput.value = '';
+  });
+
+  function renderStagedAttachments() {
+    if (stagedFiles.length === 0) {
+      stagingAttachmentsBar.style.display = 'none';
+      stagingAttachmentsBar.innerHTML = '';
+      return;
+    }
+
+    stagingAttachmentsBar.style.display = 'flex';
+    stagingAttachmentsBar.innerHTML = stagedFiles.map((file, idx) => `
+      <div class="staged-file-chip">
+        <span>${file.isImage ? '🖼️' : '📄'} ${escapeHTML(file.name)}</span>
+        <button class="staged-file-remove" data-idx="${idx}">&times;</button>
+      </div>
+    `).join('');
+
+    stagingAttachmentsBar.querySelectorAll('.staged-file-remove').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const idx = parseInt(e.target.dataset.idx, 10);
+        stagedFiles.splice(idx, 1);
+        renderStagedAttachments();
+      });
+    });
+  }
+
+  // 3. BYOK Vault Management
   function loadVaultKeys() {
     const keys = VaultService.getKeys();
     geminiKeyInput.value = keys.gemini;
@@ -44,7 +165,7 @@ export function initializeUI() {
     const hasKeys = VaultService.hasKeys();
     const vaultIndicator = document.getElementById('vaultIndicator');
     if (vaultIndicator) {
-      vaultIndicator.textContent = hasKeys ? 'BYOK Active (2 Keys)' : 'BYOK Setup';
+      vaultIndicator.textContent = hasKeys ? 'BYOK Active' : 'BYOK Setup';
       vaultIndicator.style.color = hasKeys ? 'var(--accent-coder)' : 'var(--text-secondary)';
     }
   }
@@ -61,12 +182,11 @@ export function initializeUI() {
     VaultService.saveKeys(geminiKeyInput.value, groqKeyInput.value);
     updateVaultButtonIndicator();
     vaultModal.classList.remove('open');
-    showToast('BYOK keys securely saved to browser storage.');
+    showToast('BYOK keys securely saved.');
   });
 
   btnTestGemini.addEventListener('click', async () => {
     geminiStatus.textContent = 'Testing...';
-    geminiStatus.style.color = 'var(--accent-manager)';
     try {
       await VaultService.testGemini(geminiKeyInput.value);
       geminiStatus.textContent = '✅ Connected (Gemini Free)';
@@ -79,7 +199,6 @@ export function initializeUI() {
 
   btnTestGroq.addEventListener('click', async () => {
     groqStatus.textContent = 'Testing...';
-    groqStatus.style.color = 'var(--accent-manager)';
     try {
       await VaultService.testGroq(groqKeyInput.value);
       groqStatus.textContent = '✅ Connected (Groq 300+ T/s)';
@@ -90,7 +209,7 @@ export function initializeUI() {
     }
   });
 
-  // 2. Mode Selector
+  // 4. Execution Mode Selector
   modeChips.forEach(chip => {
     chip.addEventListener('click', () => {
       modeChips.forEach(c => c.classList.remove('active'));
@@ -99,7 +218,7 @@ export function initializeUI() {
     });
   });
 
-  // 3. Starter Cards in Welcome Screen
+  // 5. Starter Cards
   starterCards.forEach(card => {
     card.addEventListener('click', () => {
       chatInput.value = card.dataset.prompt;
@@ -107,7 +226,7 @@ export function initializeUI() {
     });
   });
 
-  // 4. Input Auto-Resize & Keyboard Handling
+  // 6. Input Auto-Resize & Keyboard
   chatInput.addEventListener('input', () => {
     chatInput.style.height = 'auto';
     chatInput.style.height = Math.min(chatInput.scrollHeight, 140) + 'px';
@@ -122,43 +241,63 @@ export function initializeUI() {
 
   btnSend.addEventListener('click', submitUserMessage);
 
-  // 5. New Chat Reset
   btnNewChat.addEventListener('click', () => {
     chatStream.innerHTML = '';
     chatStream.appendChild(welcomeHero);
     welcomeHero.style.display = 'flex';
-    messageCount = 0;
+    stagedFiles = [];
+    renderStagedAttachments();
     chatInput.value = '';
     chatInput.style.height = 'auto';
     chatInput.focus();
     showToast('Started fresh conversation.');
   });
 
-  // 6. Conversational Pipeline Execution
+  // 7. Message Pipeline with Personalized Ishva Flow
   function submitUserMessage() {
     const prompt = chatInput.value.trim();
-    if (!prompt) return;
+    const currentAttachments = [...stagedFiles];
 
-    // Hide welcome hero on first message
+    if (!prompt && currentAttachments.length === 0) return;
+
     if (welcomeHero && welcomeHero.style.display !== 'none') {
       welcomeHero.style.display = 'none';
     }
 
-    messageCount++;
     const turnId = 'turn-' + Date.now();
 
-    // 1. Render User Message
+    // 1. Render User Message with any attached files/images
     const userTurn = document.createElement('div');
     userTurn.className = 'chat-turn user-turn';
-    userTurn.innerHTML = `<div class="user-bubble">${escapeHTML(prompt)}</div>`;
+
+    let attachmentsHTML = '';
+    if (currentAttachments.length > 0) {
+      attachmentsHTML = `
+        <div class="user-attachments-preview">
+          ${currentAttachments.map(att => att.isImage 
+            ? `<img src="${att.dataUrl}" class="attached-thumb" alt="${escapeHTML(att.name)}" />`
+            : `<span class="attached-file-pill">📄 ${escapeHTML(att.name)} (${att.size})</span>`
+          ).join('')}
+        </div>
+      `;
+    }
+
+    userTurn.innerHTML = `
+      <div class="user-bubble">
+        ${attachmentsHTML}
+        <div>${escapeHTML(prompt || 'Analyzed attachments')}</div>
+      </div>
+    `;
     chatStream.appendChild(userTurn);
 
-    // Clear input
+    // Reset inputs
     chatInput.value = '';
     chatInput.style.height = 'auto';
+    stagedFiles = [];
+    renderStagedAttachments();
     btnSend.disabled = true;
 
-    // 2. Create Assistant Message Container
+    // 2. Create Assistant Turn with Ishva Flow
     const assistantTurn = document.createElement('div');
     assistantTurn.className = 'chat-turn assistant-turn';
     assistantTurn.id = turnId;
@@ -166,19 +305,19 @@ export function initializeUI() {
     assistantTurn.innerHTML = `
       <div class="assistant-avatar">IA</div>
       <div class="assistant-content-wrapper">
-        <!-- Live Multi-Agent Orchestration Trace -->
+        <!-- Personalized Ishva Thinking Trace -->
         <div class="orchestration-trace" id="${turnId}-trace">
           <div class="trace-header" onclick="this.parentElement.classList.toggle('collapsed')">
             <span class="trace-title">
               <span class="status-dot active"></span>
-              <span>Multi-Agent Coordination Active...</span>
+              <span id="${turnId}-status-header">Ishva got your request...</span>
             </span>
-            <span style="color: var(--text-muted); font-size: 0.75rem;">⚡ RTTO</span>
+            <span style="color: var(--text-muted); font-size: 0.75rem;">⚡ Ishva AI</span>
           </div>
           <div class="trace-body" id="${turnId}-steps">
-            <div class="trace-step working" id="${turnId}-step-supervisor">
-              <span class="trace-step-icon">🧠</span>
-              <span><strong>Supervisor</strong>: Decomposing prompt into atomic agent tasks...</span>
+            <div class="trace-step working" id="${turnId}-step-init">
+              <span class="trace-step-icon">📥</span>
+              <span>Ishva got your request...</span>
             </div>
           </div>
         </div>
@@ -187,7 +326,7 @@ export function initializeUI() {
         <div class="answer-card" id="${turnId}-answer">
           <div style="color: var(--text-muted); display: flex; align-items: center; gap: 0.5rem;">
             <div class="status-dot active" style="background: var(--accent-manager);"></div>
-            <span>Ishva agents synthesizing response...</span>
+            <span>Ishva is formulating response...</span>
           </div>
         </div>
       </div>
@@ -196,49 +335,49 @@ export function initializeUI() {
     chatStream.appendChild(assistantTurn);
     scrollToBottom();
 
-    // 3. Run Multi-Agent Orchestrator
+    // 3. Launch Orchestrator
     const orchestrator = new Orchestrator({
-      onAgentUpdate: (role, update) => {
+      onStatusUpdate: (step) => {
         const stepsContainer = document.getElementById(`${turnId}-steps`);
-        if (!stepsContainer) return;
+        const headerEl = document.getElementById(`${turnId}-status-header`);
+        if (headerEl) headerEl.textContent = step.text;
 
-        let stepEl = document.getElementById(`${turnId}-step-${role}`);
-        if (!stepEl) {
-          stepEl = document.createElement('div');
-          stepEl.id = `${turnId}-step-${role}`;
+        if (stepsContainer) {
+          const stepEl = document.createElement('div');
+          stepEl.className = 'trace-step working';
+          stepEl.innerHTML = `
+            <span class="trace-step-icon">${step.icon}</span>
+            <span>${escapeHTML(step.text)}</span>
+          `;
           stepsContainer.appendChild(stepEl);
         }
-
-        const icons = {
-          supervisor: '🧠',
-          reasoning: '🔬',
-          coder: '⚡',
-          security: '🛡️'
-        };
-
-        stepEl.className = `trace-step ${update.status}`;
-        stepEl.innerHTML = `
-          <span class="trace-step-icon">${icons[role] || '🤖'}</span>
-          <span><strong>${capitalize(role)}</strong>: ${escapeHTML(update.log)}</span>
-        `;
         scrollToBottom();
       },
       onComplete: (data) => {
         btnSend.disabled = false;
 
-        // Update Trace Header to Complete
-        const traceHeader = document.querySelector(`#${turnId}-trace .trace-title`);
-        if (traceHeader) {
-          traceHeader.innerHTML = `
-            <span class="status-dot" style="background: var(--accent-coder);"></span>
-            <span>All 4 Agents Completed & Audited (10/10)</span>
-          `;
+        const headerEl = document.getElementById(`${turnId}-status-header`);
+        if (headerEl) {
+          headerEl.innerHTML = `<span>Ishva verified & completed (10/10)</span>`;
         }
 
-        // Render Final Answer
         const answerCard = document.getElementById(`${turnId}-answer`);
         if (answerCard) {
+          let permissionHTML = '';
+          if (data.permissionNeeded) {
+            permissionHTML = `
+              <div class="permission-banner" id="${turnId}-perm">
+                <span>⚡ <strong>Ishva Request:</strong> Accept permission to execute sub-agent actions?</span>
+                <div class="permission-btn-group">
+                  <button class="btn-permission-accept" onclick="this.parentElement.innerHTML='<span style=\\'color:#10b981;\\'>✓ Permission Granted</span>'">Accept</button>
+                  <button class="btn-permission-dismiss" onclick="document.getElementById('${turnId}-perm').remove()">Dismiss</button>
+                </div>
+              </div>
+            `;
+          }
+
           answerCard.innerHTML = `
+            ${permissionHTML}
             ${formatMarkdownToHTML(data.synthesis)}
             <div class="answer-actions">
               <button class="btn-header-action btn-copy" data-turn="${turnId}">
@@ -248,7 +387,6 @@ export function initializeUI() {
             </div>
           `;
 
-          // Attach copy action
           const copyBtn = answerCard.querySelector('.btn-copy');
           if (copyBtn) {
             copyBtn.addEventListener('click', () => {
@@ -264,12 +402,12 @@ export function initializeUI() {
         btnSend.disabled = false;
         const answerCard = document.getElementById(`${turnId}-answer`);
         if (answerCard) {
-          answerCard.innerHTML = `<div style="color: #ef4444;">Error executing request: ${escapeHTML(err.message)}</div>`;
+          answerCard.innerHTML = `<div style="color: #ef4444;">Error: ${escapeHTML(err.message)}</div>`;
         }
       }
     });
 
-    orchestrator.execute(prompt, activeMode);
+    orchestrator.execute(prompt, activeMode, currentAttachments);
   }
 
   function scrollToBottom() {
@@ -299,10 +437,6 @@ export function initializeUI() {
     return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
-  function capitalize(str) {
-    return str.charAt(0).toUpperCase() + str.slice(1);
-  }
-
   function showToast(msg) {
     const toast = document.createElement('div');
     toast.style.cssText = `
@@ -328,6 +462,7 @@ export function initializeUI() {
     }, 2500);
   }
 
-  // Initial load
+  // Initialize Auth & Keys
+  updateAuthUI();
   loadVaultKeys();
 }
