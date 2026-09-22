@@ -418,7 +418,11 @@ export function initializeUI() {
     chatStream.appendChild(assistantTurn);
     scrollToBottom();
 
-    // 3. Launch Orchestrator
+    // 3. Launch Orchestrator with real streaming support
+    let streamBuffer = '';
+    let isStreaming = false;
+    let streamDiv = null;
+
     const orchestrator = new Orchestrator({
       onStatusUpdate: (step) => {
         const stepsContainer = document.getElementById(`${turnId}-steps`);
@@ -426,22 +430,57 @@ export function initializeUI() {
         if (headerEl) headerEl.textContent = step.text;
 
         if (stepsContainer) {
+          const agentColors = {
+            gemini: 'var(--accent-manager)',
+            groq: 'var(--accent-coder)',
+            visual: '#a855f7',
+            pollinations: '#f59e0b'
+          };
+          const agentColor = step.agent ? (agentColors[step.agent] || 'var(--text-muted)') : 'var(--text-muted)';
+          const agentBadge = step.agent
+            ? `<span class="agent-badge" style="background:${agentColor}20;color:${agentColor};">${step.agent}</span>`
+            : '';
           const stepEl = document.createElement('div');
           stepEl.className = 'trace-step working';
           stepEl.innerHTML = `
             <span class="trace-step-icon">${step.icon}</span>
             <span>${escapeHTML(step.text)}</span>
+            ${agentBadge}
           `;
           stepsContainer.appendChild(stepEl);
         }
         scrollToBottom();
       },
+
+      onTokenStream: (token) => {
+        if (!isStreaming) {
+          isStreaming = true;
+          const answerCard = document.getElementById(`${turnId}-answer`);
+          if (answerCard) {
+            answerCard.innerHTML = `<div class="streaming-text" id="${turnId}-stream"></div>`;
+            streamDiv = document.getElementById(`${turnId}-stream`);
+          }
+        }
+        if (streamDiv) {
+          streamBuffer += token;
+          streamDiv.innerHTML = formatMarkdownToHTML(streamBuffer);
+          scrollToBottom();
+        }
+      },
+
       onComplete: (data) => {
         btnSend.disabled = false;
+        isStreaming = false;
 
         const headerEl = document.getElementById(`${turnId}-status-header`);
-        if (headerEl) {
-          headerEl.innerHTML = `<span>Ishva verified & completed (10/10)</span>`;
+        if (headerEl) headerEl.innerHTML = `<span>&#x2705; Ishva verified &amp; completed (10/10)</span>`;
+
+        const stepsContainer2 = document.getElementById(`${turnId}-steps`);
+        if (stepsContainer2) {
+          stepsContainer2.querySelectorAll('.trace-step.working').forEach(s => {
+            s.classList.remove('working');
+            s.classList.add('done');
+          });
         }
 
         const answerCard = document.getElementById(`${turnId}-answer`);
@@ -450,43 +489,52 @@ export function initializeUI() {
           if (data.permissionNeeded) {
             permissionHTML = `
               <div class="permission-banner" id="${turnId}-perm">
-                <span>⚡ <strong>Ishva Request:</strong> Accept permission to execute sub-agent actions?</span>
+                <span>&#x26A1; <strong>Ishva Request:</strong> Accept permission to execute sub-agent actions?</span>
                 <div class="permission-btn-group">
-                  <button class="btn-permission-accept" onclick="this.parentElement.innerHTML='<span style=\\'color:#10b981;\\'>✓ Permission Granted</span>'">Accept</button>
-                  <button class="btn-permission-dismiss" onclick="document.getElementById('${turnId}-perm').remove()">Dismiss</button>
+                  <button class="btn-permission-accept" onclick="this.parentElement.innerHTML='<span style=&quot;color:#10b981;&quot;>&#x2713; Permission Granted</span>'">Accept</button>
+                  <button class="btn-permission-dismiss" onclick="document.getElementById(\'${turnId}-perm\').remove()">Dismiss</button>
                 </div>
               </div>
             `;
           }
 
+          const renderedContent = data.html || formatMarkdownToHTML(data.synthesis || streamBuffer);
+          const intentBadge = data.intent ? `<span class="answer-badge intent-badge">${data.intent}</span>` : '';
+
           answerCard.innerHTML = `
             ${permissionHTML}
-            ${formatMarkdownToHTML(data.synthesis)}
+            ${renderedContent}
             <div class="answer-actions">
               <button class="btn-header-action btn-copy" data-turn="${turnId}">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                 <span>Copy Answer</span>
               </button>
+              ${intentBadge}
             </div>
           `;
 
           const copyBtn = answerCard.querySelector('.btn-copy');
           if (copyBtn) {
             copyBtn.addEventListener('click', () => {
-              navigator.clipboard.writeText(data.synthesis);
-              showToast('Copied answer to clipboard!');
+              navigator.clipboard.writeText(data.synthesis || streamBuffer);
+              showToast('Copied to clipboard!');
             });
           }
         }
-
+        streamBuffer = '';
         scrollToBottom();
       },
+
       onError: (err) => {
         btnSend.disabled = false;
+        isStreaming = false;
+        streamBuffer = '';
         const answerCard = document.getElementById(`${turnId}-answer`);
         if (answerCard) {
-          answerCard.innerHTML = `<div style="color: #ef4444;">Error: ${escapeHTML(err.message)}</div>`;
+          answerCard.innerHTML = `<div class="error-card"><span>&#x26A0;&#xFE0F;</span><div><strong>Error</strong><br/><span>${escapeHTML(err.message)}</span></div></div>`;
         }
+        const sc = document.getElementById(`${turnId}-steps`);
+        if (sc) sc.querySelectorAll('.trace-step.working').forEach(s => s.classList.add('error'));
       }
     });
 

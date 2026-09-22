@@ -969,3 +969,123 @@
   font-weight: 600;
   cursor: pointer;
 }
+
+/* ── Phase 2: Real Streaming & Agent UI ─────────────────────────────────── */
+
+/* Live token streaming text container */
+.streaming-text {
+  min-height: 1.5rem;
+  line-height: 1.7;
+}
+.streaming-text::after {
+  content: '▋';
+  display: inline-block;
+  color: var(--accent-manager);
+  animation: blink-cursor 0.8s step-end infinite;
+  margin-left: 2px;
+}
+@keyframes blink-cursor {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+
+/* Trace step states: done + error */
+.trace-step.done {
+  opacity: 0.55;
+}
+.trace-step.done .trace-step-icon::after {
+  content: ' ✓';
+  font-size: 0.7rem;
+  color: #10b981;
+}
+.trace-step.error {
+  opacity: 0.7;
+  color: #ef4444;
+}
+.trace-step.error .trace-step-icon::after {
+  content: ' ✗';
+  font-size: 0.7rem;
+  color: #ef4444;
+}
+
+/* Agent badge pill in trace steps */
+.agent-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1rem 0.45rem;
+  border-radius: 9999px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  margin-left: auto;
+  border: 1px solid currentColor;
+  opacity: 0.85;
+}
+
+/* Intent badge in answer actions bar */
+.answer-badge.intent-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.6rem;
+  border-radius: 9999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  background: rgba(56, 189, 248, 0.12);
+  color: var(--accent-manager);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+}
+
+/* Error card */
+.error-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: var(--radius-md);
+  color: #fca5a5;
+  font-size: 0.875rem;
+}
+.error-card > span:first-child {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+/* Generated image wrapper */
+.generated-image-wrapper {
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-glass);
+  margin: 0.5rem 0;
+}
+.generated-image {
+  width: 100%;
+  max-width: 640px;
+  height: auto;
+  display: block;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  object-fit: cover;
+}
+.image-caption {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.85rem;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.02);
+}
+.img-label {
+  font-weight: 600;
+  color: #a855f7;
+}
+.img-prompt {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
