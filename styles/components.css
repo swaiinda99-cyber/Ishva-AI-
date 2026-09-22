@@ -32,6 +32,15 @@
   display: flex;
   align-items: center;
   gap: 0.85rem;
+  cursor: pointer;
+  padding: 0.25rem 0.6rem;
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+}
+
+.brand-wrapper:hover {
+  background: rgba(255, 255, 255, 0.04);
+  transform: translateY(-1px);
 }
 
 .brand-logo {
@@ -51,8 +60,8 @@
 }
 
 .brand-title {
-  font-size: 1.15rem;
-  font-weight: 700;
+  font-size: 1.2rem;
+  font-weight: 800;
   letter-spacing: -0.02em;
   background: linear-gradient(90deg, #f8fafc, #38bdf8);
   -webkit-background-clip: text;
@@ -62,15 +71,10 @@
   gap: 0.5rem;
 }
 
-.brand-version {
-  font-size: 0.65rem;
+.brand-subtitle-mini {
+  font-size: 0.7rem;
+  color: var(--text-muted);
   font-family: var(--font-mono);
-  padding: 0.15rem 0.45rem;
-  border-radius: var(--radius-full);
-  background: rgba(56, 189, 248, 0.15);
-  border: 1px solid rgba(56, 189, 248, 0.3);
-  color: var(--accent-manager);
-  -webkit-text-fill-color: initial;
 }
 
 .header-actions {
@@ -119,8 +123,8 @@
 
 .btn-google-login:hover {
   background: #f1f5f9;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(255, 255, 255, 0.25);
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 4px 18px rgba(255, 255, 255, 0.3);
 }
 
 .google-icon {
@@ -269,7 +273,6 @@
   width: 100%;
   max-width: 900px;
   margin: 0 auto;
-  animation: floatGentle 0.3s ease-out;
 }
 
 .chat-turn.user-turn {
@@ -286,33 +289,34 @@
   line-height: 1.6;
   max-width: 80%;
   box-shadow: 0 8px 25px rgba(56, 189, 248, 0.2);
-  transform: translateZ(5px);
+  animation: userBubblePop 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .user-attachments-preview {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.6rem;
   flex-wrap: wrap;
   margin-bottom: 0.6rem;
 }
 
 .attached-thumb {
-  max-width: 180px;
-  max-height: 120px;
+  max-width: 220px;
+  max-height: 160px;
   border-radius: var(--radius-sm);
   border: 1px solid rgba(255, 255, 255, 0.2);
   object-fit: cover;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
 }
 
 .attached-file-pill {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  padding: 0.3rem 0.65rem;
-  background: rgba(0, 0, 0, 0.3);
+  padding: 0.35rem 0.75rem;
+  background: rgba(0, 0, 0, 0.35);
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: var(--radius-sm);
-  font-size: 0.75rem;
+  font-size: 0.78rem;
   font-family: var(--font-mono);
 }
 
@@ -393,6 +397,7 @@
   font-size: 0.8rem;
   line-height: 1.4;
   color: var(--text-secondary);
+  animation: answerEmerge 0.25s ease-out;
 }
 
 .trace-step-icon {
@@ -462,7 +467,7 @@
   box-shadow: 0 10px 35px rgba(0, 0, 0, 0.5), 0 0 20px rgba(56, 189, 248, 0.1);
   color: var(--text-primary);
   line-height: 1.7;
-  transform: translateZ(4px);
+  animation: answerEmerge 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .answer-card h1, .answer-card h2, .answer-card h3 {
@@ -484,7 +489,7 @@
 }
 
 /* ==========================================================================
-   Pinned Floating Bottom Dock (+ Attachment Icon, Modes & Input)
+   Pinned Floating Bottom Dock (+ Attachment Menu, Modes & Input)
    ========================================================================== */
 .chat-dock {
   position: absolute;
@@ -513,6 +518,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.65rem;
+  position: relative;
   transition: all var(--transition-fast);
 }
 
@@ -558,9 +564,16 @@
   display: flex;
   align-items: flex-end;
   gap: 0.75rem;
+  position: relative;
 }
 
-/* Plus (+) Upload Button */
+/* Plus (+) Button Container & Menu Popup */
+.attachment-plus-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
 .btn-attachment-plus {
   width: 36px;
   height: 36px;
@@ -581,6 +594,54 @@
   border-color: var(--accent-manager);
   color: #fff;
   transform: scale(1.08);
+}
+
+/* Attachment Menu Popup */
+.attachment-menu-popup {
+  position: absolute;
+  bottom: calc(100% + 12px);
+  left: 0;
+  width: 220px;
+  background: var(--bg-secondary);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: var(--radius-md);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), 0 0 20px rgba(56, 189, 248, 0.2);
+  padding: 0.5rem;
+  display: none;
+  flex-direction: column;
+  gap: 0.35rem;
+  z-index: 200;
+  animation: menuSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.attachment-menu-popup.open {
+  display: flex;
+}
+
+.attachment-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  cursor: pointer;
+  text-align: left;
+  transition: all var(--transition-fast);
+}
+
+.attachment-menu-item:hover {
+  background: rgba(56, 189, 248, 0.12);
+  color: #fff;
+}
+
+.attachment-menu-icon {
+  font-size: 1.1rem;
 }
 
 .chat-input {
@@ -628,6 +689,7 @@
   transform: none;
 }
 
+/* Toolbar & Mode Breakdown */
 .dock-toolbar {
   display: flex;
   justify-content: space-between;
@@ -642,6 +704,7 @@
   display: flex;
   align-items: center;
   gap: 0.4rem;
+  position: relative;
 }
 
 .mode-chip {
@@ -661,13 +724,71 @@
   color: #fff;
 }
 
-.dock-disclaimer {
-  font-size: 0.72rem;
+.btn-mode-info {
+  background: transparent;
+  border: none;
   color: var(--text-muted);
+  font-size: 0.8rem;
+  cursor: pointer;
+  padding: 0.2rem 0.4rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color var(--transition-fast);
+}
+
+.btn-mode-info:hover {
+  color: var(--accent-manager);
+}
+
+/* Mode Breakdown Popover */
+.mode-breakdown-card {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 0;
+  width: 320px;
+  background: var(--bg-secondary);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+  font-size: 0.8rem;
+  display: none;
+  flex-direction: column;
+  gap: 0.75rem;
+  z-index: 200;
+  animation: menuSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.mode-breakdown-card.open {
+  display: flex;
+}
+
+.mode-breakdown-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.mode-breakdown-title {
+  font-weight: 700;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.mode-breakdown-desc {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  line-height: 1.4;
 }
 
 /* ==========================================================================
-   Code Blocks & Modal Re-use
+   Code Blocks & Modals with 3D Pop
    ========================================================================== */
 .code-block-wrapper {
   background: #04060a;
@@ -699,20 +820,20 @@
   color: #38bdf8;
 }
 
-/* Modal Styles */
+/* Modal Backdrop & 3D Enter Animation */
 .modal-backdrop {
   position: fixed;
   inset: 0;
   background: rgba(3, 7, 18, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
   opacity: 0;
   pointer-events: none;
-  transition: opacity var(--transition-smooth);
+  transition: opacity 0.3s ease;
 }
 
 .modal-backdrop.open {
@@ -722,7 +843,7 @@
 
 .modal-card {
   background: var(--bg-secondary);
-  border: 1px solid var(--border-subtle);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-neon);
   width: 90%;
@@ -731,12 +852,12 @@
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
-  transform: translateY(20px);
-  transition: transform var(--transition-smooth);
+  transform: scale(0.9) translateY(20px);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .modal-backdrop.open .modal-card {
-  transform: translateY(0);
+  animation: modalEnter3D 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .modal-header {

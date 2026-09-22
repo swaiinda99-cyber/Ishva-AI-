@@ -1,17 +1,18 @@
 /**
  * Conversational UI for Ishva AI
- * - Personalized thinking flow: "Ishva got your request", "Ishva is analyzing...",
- *   "Ishva is breaking task...", "Ishva is generating...", "Ishva is sending task..."
- * - Plus (+) icon for attaching photos, code, and documents
- * - Google Sign-In interface
- * - Permission & confirmation prompts
+ * - Personalized thinking flow
+ * - About Ishva AI & Privacy modal
+ * - Plus (+) popup menu: Add Photo, Add File, Generate Photo, Paste Code
+ * - Mode breakdown popover: Fast vs Balanced vs Deep Agentic
+ * - Google Sign-In with animation
+ * - 3D animations and fluid transitions
  */
 
 import { VaultService } from '../services/vault.js';
 import { Orchestrator } from '../services/orchestrator.js';
 
 export function initializeUI() {
-  // DOM Elements
+  // Chat DOM Elements
   const chatStream = document.getElementById('chatStream');
   const welcomeHero = document.getElementById('welcomeHero');
   const chatInput = document.getElementById('chatInput');
@@ -20,19 +21,34 @@ export function initializeUI() {
   const modeChips = document.querySelectorAll('.mode-chip');
   const starterCards = document.querySelectorAll('.starter-card');
 
-  // File Upload Elements
-  const fileUploadInput = document.getElementById('fileUploadInput');
+  // About Modal Elements
+  const btnAboutIshva = document.getElementById('btnAboutIshva');
+  const aboutModal = document.getElementById('aboutModal');
+  const btnCloseAboutModal = document.getElementById('btnCloseAboutModal');
+  const btnCloseAboutModalBtn = document.getElementById('btnCloseAboutModalBtn');
+
+  // Attachment Menu Elements
   const btnAttachmentPlus = document.getElementById('btnAttachmentPlus');
+  const attachmentMenuPopup = document.getElementById('attachmentMenuPopup');
+  const menuUploadPhoto = document.getElementById('menuUploadPhoto');
+  const menuUploadFile = document.getElementById('menuUploadFile');
+  const menuGeneratePhoto = document.getElementById('menuGeneratePhoto');
+  const menuPasteCode = document.getElementById('menuPasteCode');
+  const filePhotoInput = document.getElementById('filePhotoInput');
+  const fileGeneralInput = document.getElementById('fileGeneralInput');
   const stagingAttachmentsBar = document.getElementById('stagingAttachmentsBar');
+
+  // Mode Info Elements
+  const btnModeInfo = document.getElementById('btnModeInfo');
+  const modeBreakdownCard = document.getElementById('modeBreakdownCard');
 
   // Google Login Elements
   const btnGoogleLogin = document.getElementById('btnGoogleLogin');
   const googleLoginModal = document.getElementById('googleLoginModal');
   const btnCloseGoogleModal = document.getElementById('btnCloseGoogleModal');
   const btnSimulateGoogleAuth = document.getElementById('btnSimulateGoogleAuth');
-  const googleAuthText = document.getElementById('googleAuthText');
 
-  // Vault Elements
+  // BYOK Vault Elements
   const vaultModal = document.getElementById('vaultModal');
   const btnOpenVault = document.getElementById('btnOpenVault');
   const btnCloseModal = document.getElementById('btnCloseModal');
@@ -49,7 +65,15 @@ export function initializeUI() {
   let stagedFiles = [];
   let currentUser = localStorage.getItem('ishva_user') ? JSON.parse(localStorage.getItem('ishva_user')) : null;
 
-  // 1. Google Auth Management
+  // 1. About Ishva AI & Privacy Modal
+  btnAboutIshva.addEventListener('click', () => {
+    aboutModal.classList.add('open');
+  });
+
+  btnCloseAboutModal.addEventListener('click', () => aboutModal.classList.remove('open'));
+  btnCloseAboutModalBtn.addEventListener('click', () => aboutModal.classList.remove('open'));
+
+  // 2. Google Auth Management
   function updateAuthUI() {
     if (currentUser) {
       btnGoogleLogin.innerHTML = `
@@ -73,7 +97,7 @@ export function initializeUI() {
 
   btnGoogleLogin.addEventListener('click', () => {
     if (currentUser) {
-      if (confirm(`Signed in as ${currentUser.name} (${currentUser.email}). Do you want to sign out?`)) {
+      if (confirm(`Signed in as ${currentUser.name} (${currentUser.email}). Sign out?`)) {
         currentUser = null;
         localStorage.removeItem('ishva_user');
         updateAuthUI();
@@ -95,16 +119,55 @@ export function initializeUI() {
     localStorage.setItem('ishva_user', JSON.stringify(currentUser));
     updateAuthUI();
     googleLoginModal.classList.remove('open');
-    showToast('Signed in successfully with Google as Swai Singh.');
+    showToast('Signed in with Google as Swai Singh.');
   });
 
-  // 2. File / Photo Attachments via (+) Button
-  btnAttachmentPlus.addEventListener('click', () => {
-    fileUploadInput.click();
+  // 3. Attachment Menu Popup (+)
+  btnAttachmentPlus.addEventListener('click', (e) => {
+    e.stopPropagation();
+    attachmentMenuPopup.classList.toggle('open');
+    modeBreakdownCard.classList.remove('open');
   });
 
-  fileUploadInput.addEventListener('change', (e) => {
-    const files = Array.from(e.target.files);
+  menuUploadPhoto.addEventListener('click', () => {
+    attachmentMenuPopup.classList.remove('open');
+    filePhotoInput.click();
+  });
+
+  menuUploadFile.addEventListener('click', () => {
+    attachmentMenuPopup.classList.remove('open');
+    fileGeneralInput.click();
+  });
+
+  menuGeneratePhoto.addEventListener('click', () => {
+    attachmentMenuPopup.classList.remove('open');
+    const prompt = window.prompt('Describe the image you want to generate:');
+    if (prompt && prompt.trim()) {
+      const encoded = encodeURIComponent(prompt.trim());
+      const imageUrl = `https://image.pollinations.ai/prompt/${encoded}?width=800&height=600&nologo=true`;
+      
+      stagedFiles.push({
+        name: `Generated: ${prompt.trim()}`,
+        size: 'AI Generated',
+        type: 'image/jpeg',
+        isImage: true,
+        dataUrl: imageUrl
+      });
+      renderStagedAttachments();
+      showToast('Generated image preview added to attachments.');
+    }
+  });
+
+  menuPasteCode.addEventListener('click', () => {
+    attachmentMenuPopup.classList.remove('open');
+    chatInput.value += (chatInput.value ? '\n' : '') + '```typescript\n// Paste your code here\n\n```\n';
+    chatInput.focus();
+    chatInput.dispatchEvent(new Event('input'));
+  });
+
+  // File Input Change Handlers
+  function handleFileInput(input) {
+    const files = Array.from(input.files);
     if (!files.length) return;
 
     files.forEach(file => {
@@ -126,8 +189,11 @@ export function initializeUI() {
       else reader.readAsText(file);
     });
 
-    fileUploadInput.value = '';
-  });
+    input.value = '';
+  }
+
+  filePhotoInput.addEventListener('change', () => handleFileInput(filePhotoInput));
+  fileGeneralInput.addEventListener('change', () => handleFileInput(fileGeneralInput));
 
   function renderStagedAttachments() {
     if (stagedFiles.length === 0) {
@@ -153,7 +219,24 @@ export function initializeUI() {
     });
   }
 
-  // 3. BYOK Vault Management
+  // 4. Mode Breakdown Info Toggle
+  btnModeInfo.addEventListener('click', (e) => {
+    e.stopPropagation();
+    modeBreakdownCard.classList.toggle('open');
+    attachmentMenuPopup.classList.remove('open');
+  });
+
+  // Close popups on click outside
+  document.addEventListener('click', (e) => {
+    if (!attachmentMenuPopup.contains(e.target) && e.target !== btnAttachmentPlus) {
+      attachmentMenuPopup.classList.remove('open');
+    }
+    if (!modeBreakdownCard.contains(e.target) && e.target !== btnModeInfo) {
+      modeBreakdownCard.classList.remove('open');
+    }
+  });
+
+  // 5. BYOK Vault Management
   function loadVaultKeys() {
     const keys = VaultService.getKeys();
     geminiKeyInput.value = keys.gemini;
@@ -209,7 +292,7 @@ export function initializeUI() {
     }
   });
 
-  // 4. Execution Mode Selector
+  // 6. Mode Selector
   modeChips.forEach(chip => {
     chip.addEventListener('click', () => {
       modeChips.forEach(c => c.classList.remove('active'));
@@ -218,7 +301,7 @@ export function initializeUI() {
     });
   });
 
-  // 5. Starter Cards
+  // 7. Starter Cards
   starterCards.forEach(card => {
     card.addEventListener('click', () => {
       chatInput.value = card.dataset.prompt;
@@ -226,7 +309,7 @@ export function initializeUI() {
     });
   });
 
-  // 6. Input Auto-Resize & Keyboard
+  // 8. Auto-Resize & Keyboard
   chatInput.addEventListener('input', () => {
     chatInput.style.height = 'auto';
     chatInput.style.height = Math.min(chatInput.scrollHeight, 140) + 'px';
@@ -253,7 +336,7 @@ export function initializeUI() {
     showToast('Started fresh conversation.');
   });
 
-  // 7. Message Pipeline with Personalized Ishva Flow
+  // 9. Message Pipeline with Personalized Ishva Flow
   function submitUserMessage() {
     const prompt = chatInput.value.trim();
     const currentAttachments = [...stagedFiles];
