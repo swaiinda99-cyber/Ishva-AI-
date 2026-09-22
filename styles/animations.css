@@ -189,3 +189,93 @@
   box-shadow: 0 0 25px rgba(56, 189, 248, 0.45);
   transform: translateY(-1px) scale(1.03);
 }
+
+/* ==========================================================================
+   Cyber Gateway Scan & Roll-Down Keyframes
+   ========================================================================== */
+
+@keyframes spinClockwise {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes spinCounter {
+  from { transform: rotate(360deg); }
+  to { transform: rotate(0deg); }
+}
+
+@keyframes laserSweep {
+  0% {
+    top: 5%;
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    top: 95%;
+    opacity: 0;
+  }
+}
+
+@keyframes reticlePulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 20px rgba(56, 189, 248, 0.4);
+  }
+  50% {
+    transform: scale(1.08);
+    box-shadow: 0 0 45px rgba(56, 189, 248, 0.8), 0 0 60px rgba(99, 102, 241, 0.6);
+  }
+}
+
+@keyframes rollDown3D {
+  0% {
+    opacity: 0;
+    transform: perspective(700px) rotateX(-65deg) translateY(-25px) scale(0.85);
+  }
+  70% {
+    transform: perspective(700px) rotateX(8deg) translateY(2px) scale(1.02);
+  }
+  100% {
+    opacity: 1;
+    transform: perspective(700px) rotateX(0deg) translateY(0) scale(1);
+  }
+}
+
+@keyframes itemRollIn {
+  0% {
+    opacity: 0;
+    transform: translateX(-18px) rotateY(-20deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) rotateY(0deg);
+  }
+}
+
+@keyframes laserShimmer {
+  0% {
+    transform: translateX(-150%) skewX(-25deg);
+  }
+  100% {
+    transform: translateX(250%) skewX(-25deg);
+  }
+}
+
+@keyframes modalUnfold3D {
+  0% {
+    opacity: 0;
+    transform: perspective(1000px) rotateX(-20deg) scale(0.86) translateY(40px);
+  }
+  70% {
+    transform: perspective(1000px) rotateX(3deg) scale(1.02) translateY(-4px);
+  }
+  100% {
+    opacity: 1;
+    transform: perspective(1000px) rotateX(0deg) scale(1) translateY(0);
+  }
+}

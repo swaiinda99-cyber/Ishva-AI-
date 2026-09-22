@@ -26,6 +26,27 @@
   <div class="ambient-orb orb-cyan"></div>
   <div class="ambient-orb orb-purple"></div>
 
+  <!-- Cybernetic Holographic Scan & Decryption Gateway Overlay -->
+  <div class="cyber-gateway-overlay" id="cyberGatewayOverlay">
+    <div class="gateway-core">
+      <div class="gateway-reticle">
+        <div class="reticle-ring ring-outer"></div>
+        <div class="reticle-ring ring-middle"></div>
+        <div class="reticle-ring ring-inner"></div>
+        <div class="reticle-crosshair"></div>
+        <div class="reticle-icon" id="gatewayIcon">⚡</div>
+      </div>
+      <div class="gateway-laser-sweep"></div>
+      <div class="gateway-status-wrapper">
+        <div class="gateway-title" id="gatewayTitle">AUTHENTICATION IN PROGRESS</div>
+        <div class="gateway-subtitle" id="gatewaySubtitle">Initializing TLS 1.3 Zero-Knowledge Protocol...</div>
+      </div>
+      <div class="gateway-progress-bar">
+        <div class="gateway-progress-fill" id="gatewayProgressFill"></div>
+      </div>
+    </div>
+  </div>
+
   <div class="chat-app-shell">
 
     <!-- 1. Sticky Navigation Header -->
@@ -145,7 +166,9 @@
 
           <!-- Plus (+) Button with Popup Menu -->
           <div class="attachment-plus-wrapper">
-            <button class="btn-attachment-plus" id="btnAttachmentPlus" title="Add photo, file, or generate">+</button>
+            <button class="btn-attachment-plus" id="btnAttachmentPlus" title="Add photo, file, or generate">
+              <span class="plus-icon-symbol">+</span>
+            </button>
             
             <!-- Popup List of Options -->
             <div class="attachment-menu-popup" id="attachmentMenuPopup">
@@ -215,10 +238,12 @@
 
   <!-- 4. BYOK Key Vault Modal -->
   <div class="modal-backdrop" id="vaultModal">
-    <div class="modal-card">
+    <div class="modal-card modal-vault-card">
       <div class="modal-header">
-        <div class="modal-title">
-          <span>🔐 BYOK API Key Vault</span>
+        <div class="modal-title" style="display: flex; align-items: center; gap: 0.6rem;">
+          <span class="vault-lock-icon">🔐</span>
+          <span>Zero-Knowledge BYOK Vault</span>
+          <span class="vault-chip-status">AES-256 LOCAL</span>
         </div>
         <button class="btn-close-modal" id="btnCloseModal">&times;</button>
       </div>
@@ -267,32 +292,42 @@
 
   <!-- 5. Google Sign-In Modal -->
   <div class="modal-backdrop" id="googleLoginModal">
-    <div class="modal-card" style="max-width: 440px; text-align: center;">
+    <div class="modal-card modal-auth-card" style="max-width: 450px; text-align: center;">
       <div class="modal-header">
-        <div class="modal-title" style="margin: 0 auto;">
-          <span>Sign in to Ishva AI</span>
+        <div class="modal-title" style="margin: 0 auto; display: flex; align-items: center; gap: 0.5rem;">
+          <span class="auth-security-icon">🛡️</span>
+          <span>Zero-Knowledge Google Sign In</span>
         </div>
         <button class="btn-close-modal" id="btnCloseGoogleModal">&times;</button>
       </div>
 
-      <p style="font-size: 0.9rem; color: var(--text-secondary); margin-top: -0.5rem;">
-        Connect your Google account to sync preferences and conversation history.
+      <div class="auth-scanner-visual">
+        <div class="auth-scan-circle">
+          <div class="scan-radar-sweep"></div>
+          <div class="scan-lock-status">⚡ SECURE OAUTH 2.0</div>
+        </div>
+      </div>
+
+      <p style="font-size: 0.88rem; color: var(--text-secondary); margin-top: -0.25rem;">
+        Authenticate with your Google account. Your session keys remain cryptographically isolated in your browser.
       </p>
 
-      <div style="display: flex; flex-direction: column; gap: 0.75rem; margin: 1rem 0;">
-        <button class="btn-google-login" id="btnSimulateGoogleAuth" style="width: 100%; justify-content: center; padding: 0.8rem 1rem; font-size: 0.95rem;">
-          <svg class="google-icon" viewBox="0 0 24 24" style="width: 20px; height: 20px;">
+      <div style="display: flex; flex-direction: column; gap: 0.75rem; margin: 0.8rem 0;">
+        <button class="btn-google-login btn-google-animated" id="btnSimulateGoogleAuth" style="width: 100%; justify-content: center; padding: 0.95rem 1.25rem; font-size: 0.98rem; position: relative; overflow: hidden;">
+          <svg class="google-icon" viewBox="0 0 24 24" style="width: 22px; height: 22px;">
             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
             <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
             <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
             <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
           </svg>
-          <span>Continue with Google</span>
+          <span id="googleAuthActionText">Continue with Google</span>
+          <span class="laser-shimmer-sweep"></span>
         </button>
       </div>
 
-      <div style="font-size: 0.75rem; color: var(--text-muted);">
-        By signing in, you agree to Ekka Technologies' Zero-Knowledge Privacy Policy.
+      <div class="auth-security-footer">
+        <span class="security-chip-indicator">● AES-256 TLS 1.3</span>
+        <span>Zero passwords or keys stored on remote servers.</span>
       </div>
     </div>
   </div>

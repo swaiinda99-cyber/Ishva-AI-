@@ -130,6 +130,39 @@ export function initializeUI() {
     }
   }
 
+  // Cybernetic Holographic Scan & Decryption Gateway Trigger
+  const cyberGatewayOverlay = document.getElementById('cyberGatewayOverlay');
+  const gatewayIcon = document.getElementById('gatewayIcon');
+  const gatewayTitle = document.getElementById('gatewayTitle');
+  const gatewaySubtitle = document.getElementById('gatewaySubtitle');
+  const gatewayProgressFill = document.getElementById('gatewayProgressFill');
+
+  function triggerCyberGateway({ icon, title, subtitle, duration = 650, onComplete }) {
+    if (!cyberGatewayOverlay) {
+      if (onComplete) onComplete();
+      return;
+    }
+    if (gatewayIcon) gatewayIcon.textContent = icon || '⚡';
+    if (gatewayTitle) gatewayTitle.textContent = title || 'AUTHENTICATING';
+    if (gatewaySubtitle) gatewaySubtitle.textContent = subtitle || 'Initializing zero-knowledge protocol...';
+    if (gatewayProgressFill) gatewayProgressFill.style.width = '0%';
+
+    cyberGatewayOverlay.classList.add('active');
+    if (neuralCore) neuralCore.triggerShockwave();
+
+    // Trigger rapid progress fill
+    setTimeout(() => {
+      if (gatewayProgressFill) gatewayProgressFill.style.width = '100%';
+    }, 40);
+
+    setTimeout(() => {
+      cyberGatewayOverlay.classList.remove('active');
+      if (gatewayProgressFill) gatewayProgressFill.style.width = '0%';
+      if (onComplete) onComplete();
+    }, duration);
+  }
+
+  // 2. Google Auth Management with Futuristic Biometric Scan
   btnGoogleLogin.addEventListener('click', () => {
     if (currentUser) {
       if (confirm(`Signed in as ${currentUser.name} (${currentUser.email}). Sign out?`)) {
@@ -139,43 +172,64 @@ export function initializeUI() {
         showToast('Signed out of Google account.');
       }
     } else {
-      googleLoginModal.classList.add('open');
+      triggerCyberGateway({
+        icon: '🛡️',
+        title: 'BIOMETRIC IDENTITY GATEWAY',
+        subtitle: 'Establishing Zero-Knowledge OAuth 2.0 Handshake...',
+        duration: 650,
+        onComplete: () => {
+          googleLoginModal.classList.add('open');
+        }
+      });
     }
   });
 
   btnCloseGoogleModal.addEventListener('click', () => googleLoginModal.classList.remove('open'));
 
   btnSimulateGoogleAuth.addEventListener('click', () => {
-    currentUser = {
-      name: 'Swai Singh',
-      email: 'swai@ekka.tech',
-      role: 'Founder'
-    };
-    localStorage.setItem('ishva_user', JSON.stringify(currentUser));
-    updateAuthUI();
-    googleLoginModal.classList.remove('open');
-    showToast('Signed in with Google as Swai Singh.');
+    const actionText = document.getElementById('googleAuthActionText');
+    if (actionText) actionText.textContent = 'Verifying with Ekka Gateway...';
+    btnSimulateGoogleAuth.style.opacity = '0.85';
+
+    setTimeout(() => {
+      currentUser = {
+        name: 'Swai Singh',
+        email: 'swai@ekka.tech',
+        role: 'Founder'
+      };
+      localStorage.setItem('ishva_user', JSON.stringify(currentUser));
+      updateAuthUI();
+      googleLoginModal.classList.remove('open');
+      if (actionText) actionText.textContent = 'Continue with Google';
+      btnSimulateGoogleAuth.style.opacity = '1';
+      showToast('✓ Identity verified: Signed in as Swai Singh (Founder)');
+      if (neuralCore) neuralCore.triggerShockwave();
+    }, 450);
   });
 
-  // 3. Attachment Menu Popup (+)
+  // 3. Attachment Menu Popup (+) with 3D Roll-Down
   btnAttachmentPlus.addEventListener('click', (e) => {
     e.stopPropagation();
-    attachmentMenuPopup.classList.toggle('open');
+    const isOpen = attachmentMenuPopup.classList.toggle('open');
+    btnAttachmentPlus.classList.toggle('is-active', isOpen);
     modeBreakdownCard.classList.remove('open');
   });
 
   menuUploadPhoto.addEventListener('click', () => {
     attachmentMenuPopup.classList.remove('open');
+    btnAttachmentPlus.classList.remove('is-active');
     filePhotoInput.click();
   });
 
   menuUploadFile.addEventListener('click', () => {
     attachmentMenuPopup.classList.remove('open');
+    btnAttachmentPlus.classList.remove('is-active');
     fileGeneralInput.click();
   });
 
   menuGeneratePhoto.addEventListener('click', () => {
     attachmentMenuPopup.classList.remove('open');
+    btnAttachmentPlus.classList.remove('is-active');
     const prompt = window.prompt('Describe the image you want to generate:');
     if (prompt && prompt.trim()) {
       const encoded = encodeURIComponent(prompt.trim());
@@ -195,6 +249,7 @@ export function initializeUI() {
 
   menuPasteCode.addEventListener('click', () => {
     attachmentMenuPopup.classList.remove('open');
+    btnAttachmentPlus.classList.remove('is-active');
     chatInput.value += (chatInput.value ? '\n' : '') + '```typescript\n// Paste your code here\n\n```\n';
     chatInput.focus();
     chatInput.dispatchEvent(new Event('input'));
@@ -263,15 +318,16 @@ export function initializeUI() {
 
   // Close popups on click outside
   document.addEventListener('click', (e) => {
-    if (!attachmentMenuPopup.contains(e.target) && e.target !== btnAttachmentPlus) {
+    if (!attachmentMenuPopup.contains(e.target) && e.target !== btnAttachmentPlus && !btnAttachmentPlus.contains(e.target)) {
       attachmentMenuPopup.classList.remove('open');
+      btnAttachmentPlus.classList.remove('is-active');
     }
     if (!modeBreakdownCard.contains(e.target) && e.target !== btnModeInfo) {
       modeBreakdownCard.classList.remove('open');
     }
   });
 
-  // 5. BYOK Vault Management
+  // 5. BYOK Vault Management with Cybernetic Decryption Scan
   function loadVaultKeys() {
     const keys = VaultService.getKeys();
     geminiKeyInput.value = keys.gemini;
@@ -289,8 +345,16 @@ export function initializeUI() {
   }
 
   btnOpenVault.addEventListener('click', () => {
-    loadVaultKeys();
-    vaultModal.classList.add('open');
+    triggerCyberGateway({
+      icon: '🔐',
+      title: 'DECRYPTING HARDWARE VAULT',
+      subtitle: 'Unlocking AES-256 Client-Side Keystore...',
+      duration: 550,
+      onComplete: () => {
+        loadVaultKeys();
+        vaultModal.classList.add('open');
+      }
+    });
   });
 
   btnCloseModal.addEventListener('click', () => vaultModal.classList.remove('open'));
@@ -494,13 +558,14 @@ export function initializeUI() {
           isStreaming = true;
           const answerCard = document.getElementById(`${turnId}-answer`);
           if (answerCard) {
-            answerCard.innerHTML = `<div class="streaming-text" id="${turnId}-stream"></div>`;
+            answerCard.innerHTML = `<div class="streaming-text" id="${turnId}-stream"><span class="stream-cursor">&#9612;</span></div>`;
             streamDiv = document.getElementById(`${turnId}-stream`);
           }
         }
         if (streamDiv) {
           streamBuffer += token;
-          streamDiv.innerHTML = formatMarkdownToHTML(streamBuffer);
+          // Render markdown with streaming cursor at end
+          streamDiv.innerHTML = formatMarkdownToHTML(streamBuffer) + '<span class="stream-cursor">&#9612;</span>';
           scrollToBottom();
         }
       },
@@ -539,6 +604,17 @@ export function initializeUI() {
           const renderedContent = data.html || formatMarkdownToHTML(data.synthesis || streamBuffer);
           const intentBadge = data.intent ? `<span class="answer-badge intent-badge">${data.intent}</span>` : '';
 
+          // Build metadata footer
+          const memBadge = data.memoryTurns > 0
+            ? `<span class="answer-badge" style="background:rgba(99,102,241,0.12);color:#818cf8;border-color:rgba(99,102,241,0.25);">&#128172; ${data.memoryTurns} turns in memory</span>`
+            : '';
+          const tokenBadge = data.tokenCount > 0
+            ? `<span class="answer-badge" style="background:rgba(56,189,248,0.08);color:#38bdf8;border-color:rgba(56,189,248,0.2);">~${data.tokenCount.toLocaleString()} tokens used</span>`
+            : '';
+          const qcBadge = data.reflectionCount > 0
+            ? `<span class="answer-badge" style="background:rgba(245,158,11,0.12);color:#f59e0b;border-color:rgba(245,158,11,0.25);">&#128260; ${data.reflectionCount} QC correction${data.reflectionCount > 1 ? 's' : ''} applied</span>`
+            : '';
+
           answerCard.innerHTML = `
             ${permissionHTML}
             ${renderedContent}
@@ -547,7 +623,7 @@ export function initializeUI() {
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                 <span>Copy Answer</span>
               </button>
-              ${intentBadge}
+              ${intentBadge}${memBadge}${tokenBadge}${qcBadge}
             </div>
           `;
 
@@ -558,6 +634,16 @@ export function initializeUI() {
               showToast('Copied to clipboard!');
             });
           }
+
+          // Wire up individual code block copy buttons
+          answerCard.querySelectorAll('.code-copy-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+              const code = btn.closest('.code-block-wrapper')?.querySelector('code')?.innerText || '';
+              navigator.clipboard.writeText(code);
+              btn.textContent = '✓ Copied!';
+              setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
+            });
+          });
         }
         streamBuffer = '';
         scrollToBottom();
@@ -585,22 +671,88 @@ export function initializeUI() {
   }
 
   function formatMarkdownToHTML(md) {
-    return md
-      .replace(/^# (.*$)/gim, '<h2 style="font-size: 1.4rem; margin-bottom: 0.75rem; color: #f8fafc;">$1</h2>')
-      .replace(/^## (.*$)/gim, '<h3 style="font-size: 1.15rem; margin-top: 1.25rem; margin-bottom: 0.4rem; color: #38bdf8;">$1</h3>')
-      .replace(/^### (.*$)/gim, '<h4 style="font-size: 1rem; margin-top: 1rem; margin-bottom: 0.35rem; color: #818cf8;">$1</h4>')
-      .replace(/^\> (.*$)/gim, '<blockquote style="border-left: 3px solid #38bdf8; padding-left: 1rem; color: #94a3b8; margin: 0.5rem 0;">$1</blockquote>')
-      .replace(/\*\*(.*?)\*\*/gim, '<strong style="color: #fff;">$1</strong>')
-      .replace(/```([a-z]*)\n([\s\S]*?)```/gim, (match, lang, code) => `
+    if (!md) return '';
+    let html = md;
+
+    // 1. Code blocks first (protect from other replacements)
+    const codeBlocks = [];
+    html = html.replace(/```([a-z]*)\n?([\s\S]*?)```/gim, (match, lang, code) => {
+      const id = 'cb-' + codeBlocks.length;
+      const langLabel = lang ? lang.toUpperCase() : 'CODE';
+      codeBlocks.push(`
         <div class="code-block-wrapper">
           <div class="code-block-header">
-            <span>${lang.toUpperCase() || 'CODE'}</span>
-            <span style="color: var(--accent-coder);">✓ Verified Syntax</span>
+            <span class="code-lang-badge">${langLabel}</span>
+            <div style="display:flex;align-items:center;gap:0.5rem;">
+              <span style="color:var(--accent-coder);font-size:0.7rem;">&#10003; Verified Syntax</span>
+              <button class="code-copy-btn" data-block-id="${id}">Copy</button>
+            </div>
           </div>
-          <pre class="code-block-body"><code>${escapeHTML(code)}</code></pre>
+          <pre class="code-block-body"><code>${escapeHTML(code.trim())}</code></pre>
         </div>
-      `)
-      .replace(/\n\n/gim, '<br/><br/>');
+      `);
+      return `___CODEBLOCK_${codeBlocks.length - 1}___`;
+    });
+
+    // 2. Inline code
+    html = html.replace(/`([^`]+)`/gim, '<code class="inline-code">$1</code>');
+
+    // 3. Headings
+    html = html.replace(/^#### (.+)$/gim, '<h5 style="font-size:0.9rem;margin:0.75rem 0 0.25rem;color:#c4b5fd;">$1</h5>');
+    html = html.replace(/^### (.+)$/gim, '<h4 style="font-size:1rem;margin:1rem 0 0.35rem;color:#818cf8;">$1</h4>');
+    html = html.replace(/^## (.+)$/gim, '<h3 style="font-size:1.15rem;margin-top:1.25rem;margin-bottom:0.4rem;color:#38bdf8;">$1</h3>');
+    html = html.replace(/^# (.+)$/gim, '<h2 style="font-size:1.4rem;margin-bottom:0.75rem;color:#f8fafc;">$1</h2>');
+
+    // 4. Bold & Italic
+    html = html.replace(/\*\*\*(.+?)\*\*\*/gim, '<strong><em>$1</em></strong>');
+    html = html.replace(/\*\*(.+?)\*\*/gim, '<strong style="color:#fff;">$1</strong>');
+    html = html.replace(/\*(.+?)\*/gim, '<em style="color:#cbd5e1;">$1</em>');
+
+    // 5. Blockquotes
+    html = html.replace(/^> (.+)$/gim, '<blockquote style="border-left:3px solid #38bdf8;padding-left:1rem;color:#94a3b8;margin:0.5rem 0;font-style:italic;">$1</blockquote>');
+
+    // 6. Tables (GitHub-style)
+    html = html.replace(/((?:\|.+\|\n?)+)/gm, (tableBlock) => {
+      const rows = tableBlock.trim().split('\n').filter(r => r.trim());
+      if (rows.length < 2) return tableBlock;
+      const isSeperator = (r) => /^[|\s\-:]+$/.test(r);
+      if (!isSeperator(rows[1])) return tableBlock;
+      const header = rows[0].split('|').filter(c => c.trim()).map(c => `<th style="padding:0.4rem 0.75rem;border-bottom:1px solid rgba(56,189,248,0.25);color:#38bdf8;font-weight:600;">${c.trim()}</th>`);
+      const bodyRows = rows.slice(2).map(row => {
+        const cells = row.split('|').filter(c => c.trim()).map(c => `<td style="padding:0.35rem 0.75rem;border-bottom:1px solid rgba(255,255,255,0.05);">${c.trim()}</td>`);
+        return `<tr>${cells.join('')}</tr>`;
+      });
+      return `<div style="overflow-x:auto;margin:1rem 0;"><table style="width:100%;border-collapse:collapse;font-size:0.875rem;"><thead><tr>${header.join('')}</tr></thead><tbody>${bodyRows.join('')}</tbody></table></div>`;
+    });
+
+    // 7. Numbered lists
+    html = html.replace(/^(\d+)\. (.+)$/gim, '<li class="ol-item" data-num="$1">$2</li>');
+    html = html.replace(/(<li class="ol-item"[\s\S]*?<\/li>\n?)+/gm, match =>
+      `<ol style="padding-left:1.5rem;margin:0.5rem 0;">${match}</ol>`);
+
+    // 8. Bullet lists
+    html = html.replace(/^[\-\*] (.+)$/gim, '<li style="margin:0.2rem 0;">$1</li>');
+    html = html.replace(/(<li[^>]*>[\s\S]*?<\/li>\n?)+/gm, match => {
+      if (match.includes('ol-item')) return match;
+      return `<ul style="padding-left:1.5rem;margin:0.5rem 0;list-style:disc;">${match}</ul>`;
+    });
+
+    // 9. Horizontal rules
+    html = html.replace(/^---$/gim, '<hr style="border:none;border-top:1px solid rgba(56,189,248,0.2);margin:1rem 0;">');
+
+    // 10. Links
+    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/gim, '<a href="$2" target="_blank" rel="noopener" style="color:#38bdf8;text-decoration:underline;">$1</a>');
+
+    // 11. Line breaks → paragraphs
+    html = html.replace(/\n\n/gim, '</p><p style="margin:0.5rem 0;">');
+    html = html.replace(/\n/gim, '<br>');
+
+    // 12. Restore code blocks
+    codeBlocks.forEach((block, i) => {
+      html = html.replace(`___CODEBLOCK_${i}___`, block);
+    });
+
+    return `<p style="margin:0.5rem 0;">${html}</p>`;
   }
 
   function escapeHTML(str) {

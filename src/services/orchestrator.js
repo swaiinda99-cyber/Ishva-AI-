@@ -1,10 +1,16 @@
 /**
- * Ishva AI Multi-Agent Orchestrator Engine — Phase 2
+ * Ishva AI Multi-Agent Orchestrator Engine — Phase 3
  * IshvaManager: Intent routing, task decomposition, RTTO prompt governance,
- * real API calls (Gemini + Groq + Pollinations), and self-correction loop.
+ * real API calls (Gemini + Groq + Pollinations), and self-correction QC loop.
  *
  * Architecture per ULTIMATE LEARNER/Ishva AI/02_SYSTEM_ARCHITECTURE.md:
- * USER PROMPT → IshvaManager → [Reasoning|Code|Visual Agents] → QC Loop → Synthesis
+ * USER PROMPT → IshvaManager → [Reasoning|Code|Visual Agents] → QC Loop → Reflection → Synthesis
+ *
+ * Phase 3 additions:
+ * - Reflection validator: confidence < 0.6 triggers correction retry (max 2 attempts)
+ * - Correction prompt injection: manager generates targeted fix instructions
+ * - Full conversation memory with turn window (last 12 turns)
+ * - Token count estimation
  */
 
 import { VaultService } from './vault.js';
@@ -29,13 +35,12 @@ function classifyIntent(prompt) {
   return 'explain'; // default → reasoning
 }
 
-// ── JSON Schema Validator (Phase 3 pre-hook) ───────────────────────────────
+// ── JSON Schema Validator + QC Reflection Engine (Phase 3) ─────────────────
 function validateAgentResponse(data, role) {
   const required = ['taskId', 'status', 'agentRole', 'data', 'confidenceScore'];
-  for (const field of required) {
-    if (data[field] === undefined) {
-      throw new Error(`[QC] Agent '${role}' response missing required field: '${field}'`);
-    }
+  const missing = required.filter(f => data[f] === undefined);
+  if (missing.length > 0) {
+    throw new Error(`[QC] Agent '${role}' response missing fields: ${missing.join(', ')}`);
   }
   if (data.status !== 'success' && data.status !== 'error') {
     throw new Error(`[QC] Invalid status '${data.status}' from agent '${role}'`);
@@ -44,6 +49,43 @@ function validateAgentResponse(data, role) {
     data.confidenceScore = 0.5; // auto-correct malformed score
   }
   return true;
+}
+
+/**
+ * QC Reflection Check — returns true if the response needs correction.
+ * Triggers retry if:
+ *   - confidenceScore < 0.6 (low confidence)
+ *   - status === 'error'
+ *   - data.code or data.analysis is empty/trivially short
+ */
+function needsReflection(data, role) {
+  if (!data || data.status === 'error') return true;
+  if (typeof data.confidenceScore === 'number' && data.confidenceScore < 0.6) return true;
+  if (role === 'coder' && data.data?.code && data.data.code.trim().length < 30) return true;
+  if (role === 'reasoning' && data.data?.analysis && data.data.analysis.trim().length < 50) return true;
+  return false;
+}
+
+/**
+ * Build a manager-level correction prompt targeting the offending worker.
+ * The manager explains what went wrong and instructs the worker to fix it.
+ */
+function buildCorrectionPrompt(originalPrompt, failedData, role, attempt) {
+  const issues = [];
+  if (failedData?.confidenceScore < 0.6) issues.push(`confidence score was only ${failedData.confidenceScore} — be more thorough and certain`);
+  if (failedData?.status === 'error') issues.push(`the previous attempt returned an error: ${failedData.notes || 'unknown error'}`);
+  if (role === 'coder' && (!failedData?.data?.code || failedData.data.code.trim().length < 30)) issues.push('the code output was empty or too short — provide complete, working code');
+  if (role === 'reasoning' && (!failedData?.data?.analysis || failedData.data.analysis.trim().length < 50)) issues.push('the analysis was too brief — provide detailed, thorough explanation');
+
+  return `[CORRECTION ATTEMPT ${attempt}/2 — IshvaManager QC Loop]
+
+The previous response had the following issues:
+${issues.map(i => `• ${i}`).join('\n')}
+
+Original user request: ${originalPrompt}
+
+Please retry with higher quality. Be thorough, complete, and confident.
+If you cannot do better, set confidenceScore to your true best estimate and explain in notes.`;
 }
 
 // ── Markdown Renderer (safe subset) ───────────────────────────────────────
@@ -80,6 +122,8 @@ export class Orchestrator {
       onError:        callbacks.onError        || (() => {})
     };
     this.conversationHistory = [];
+    this.reflectionCount = 0; // track total QC corrections this session
+    this.tokenCount = 0;      // estimated token usage
   }
 
   // ── Status Emitter ───────────────────────────────────────────────────────
@@ -156,11 +200,20 @@ export class Orchestrator {
       }
 
       // ── Stage 6: QC Verified ──────────────────────────────────────────
-      this._status('verified', '✅', 'Ishva verified and synthesized response (10/10)');
+      const qualityScore = this.reflectionCount > 0
+        ? `${10 - this.reflectionCount * 1.5}/10 (${this.reflectionCount} correction${this.reflectionCount > 1 ? 's' : ''} applied)`
+        : '10/10';
+      this._status('verified', '✅', `IshvaManager: Response verified (${qualityScore})`);
 
-      // Update conversation memory
+      // Update conversation memory (keep last 12 turns = 24 entries)
       this.conversationHistory.push({ role: 'user', content: prompt });
       this.conversationHistory.push({ role: 'assistant', content: synthesis });
+      if (this.conversationHistory.length > 24) {
+        this.conversationHistory = this.conversationHistory.slice(-24);
+      }
+
+      // Estimate token count (rough: 1 token ≈ 4 chars)
+      this.tokenCount += Math.round((prompt.length + synthesis.length) / 4);
 
       this.callbacks.onComplete({
         isSimple: false,
@@ -168,8 +221,12 @@ export class Orchestrator {
         html,
         permissionNeeded: /(deploy|execute|delete|rm -rf|drop table|install globally)/i.test(prompt),
         intent,
-        taskId
+        taskId,
+        reflectionCount: this.reflectionCount,
+        tokenCount: this.tokenCount,
+        memoryTurns: Math.floor(this.conversationHistory.length / 2)
       });
+      this.reflectionCount = 0; // reset per-turn counter
 
     } catch (err) {
       console.error('[IshvaManager] Pipeline error:', err);
@@ -178,9 +235,34 @@ export class Orchestrator {
     }
   }
 
+  // ── Self-Correction Reflection Retry ────────────────────────────────────
+  async _reflectionRetry(agentFn, originalPrompt, failedData, role, maxAttempts = 2) {
+    let lastData = failedData;
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      this._status('reflecting', '🔄',
+        `IshvaManager QC: Applying self-correction (attempt ${attempt}/${maxAttempts})...`);
+      this.reflectionCount++;
+      await this.sleep(400);
+
+      const correctionPrompt = buildCorrectionPrompt(originalPrompt, lastData, role, attempt);
+      try {
+        lastData = await agentFn(correctionPrompt);
+        validateAgentResponse(lastData, role);
+        if (!needsReflection(lastData, role)) {
+          this._status('qc-pass', '✅', `QC: Correction accepted (confidence: ${lastData.confidenceScore})`);
+          return lastData;
+        }
+      } catch (e) {
+        console.warn(`[QC Reflection] Attempt ${attempt} failed:`, e.message);
+      }
+    }
+    // Return best available result after max retries
+    return lastData;
+  }
+
   // ── Streaming via Groq (real-time token output) ──────────────────────────
   async _executeCodeTask(taskId, prompt, keys, mode, attachments) {
-    const fullPrompt = attachments.length > 0
+    let fullPrompt = attachments.length > 0
       ? `${prompt}\n\nAttached context:\n${attachments.map(a => `[${a.name}]: ${a.content || '(binary file)'}`).join('\n')}`
       : prompt;
 
@@ -188,11 +270,20 @@ export class Orchestrator {
     if (mode === 'deep' && keys.gemini) {
       this._status('generating', '🔬', 'Reasoning Agent: Analyzing architecture (Gemini)...', 'gemini');
       try {
-        const reasonResult = await GeminiAdapter.reason(taskId + '-r', `Briefly analyze the architecture for: ${prompt}`, keys.gemini);
+        let reasonResult = await GeminiAdapter.reason(taskId + '-r', `Briefly analyze the architecture for: ${prompt}`, keys.gemini);
         validateAgentResponse(reasonResult, 'reasoning');
-        // Architecture note is injected as additional context
+
+        // Phase 3: QC check on architecture result
+        if (needsReflection(reasonResult, 'reasoning')) {
+          reasonResult = await this._reflectionRetry(
+            (p) => GeminiAdapter.reason(taskId + '-r2', p, keys.gemini),
+            prompt, reasonResult, 'reasoning'
+          );
+        }
+
+        // Architecture note is injected as additional context (FIXED: was unused before)
         const archNote = reasonResult.data?.analysis || '';
-        fullPrompt + `\n\nArchitecture Context:\n${archNote}`;
+        if (archNote) fullPrompt = fullPrompt + `\n\nArchitecture Context (Gemini Analysis):\n${archNote}`;
       } catch (e) {
         console.warn('[IshvaManager] Gemini reasoning layer failed (non-fatal):', e.message);
       }
@@ -216,10 +307,10 @@ export class Orchestrator {
       for await (const _ of streamGen) { /* tokens captured by onChunk above */ }
 
     } catch (err) {
-      // Self-correction loop: retry once with correction prompt
+      // Self-correction: retry after rate limit backoff, then fall back to Pollinations
       if (err.message.includes('429') || err.message.includes('rate')) {
+        this._status('reflecting', '⏳', 'Rate limited — waiting 2s then retrying via free AI...');
         await this.sleep(2000);
-        // Retry with Pollinations fallback
         accumulated = await this._executeWithPollinations(taskId, fullPrompt, 'code', [], mode);
       } else {
         throw err;
