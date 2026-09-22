@@ -1,11 +1,13 @@
 /**
- * Conversational UI for Ishva AI
- * - Personalized thinking flow
- * - About Ishva AI & Privacy modal
- * - Plus (+) popup menu: Add Photo, Add File, Generate Photo, Paste Code
- * - Mode breakdown popover: Fast vs Balanced vs Deep Agentic
- * - Google Sign-In with animation
- * - 3D animations and fluid transitions
+ * Conversational UI for Ishva AI — Phase 4
+ * - Personalized thinking flow with orchestration trace
+ * - Conversation History Sidebar with localStorage persistence & search
+ * - Web Speech API Voice Input
+ * - Global keyboard shortcuts (Ctrl+H, Ctrl+/, Ctrl+E)
+ * - Export conversation as .md
+ * - Retry button per assistant turn
+ * - QC reflection badges, memory turn counter, token estimator
+ * - 3D Neural Core, Cyber Gateway, BYOK Vault, Google Auth
  */
 
 import { VaultService } from '../services/vault.js';
@@ -99,6 +101,245 @@ export function initializeUI() {
   let activeMode = 'balanced';
   let stagedFiles = [];
   let currentUser = localStorage.getItem('ishva_user') ? JSON.parse(localStorage.getItem('ishva_user')) : null;
+  let currentConversationId = 'conv-' + Date.now();
+  let currentConversationTurns = []; // { role, content, timestamp }
+
+  // ── History Sidebar Elements ──────────────────────────────────────────────
+  const historySidebar       = document.getElementById('historySidebar');
+  const historySidebarOverlay= document.getElementById('historySidebarOverlay');
+  const btnToggleHistory     = document.getElementById('btnToggleHistory');
+  const btnCloseSidebar      = document.getElementById('btnCloseSidebar');
+  const historyList          = document.getElementById('historyList');
+  const historyEmptyState    = document.getElementById('historyEmptyState');
+  const historySearchInput   = document.getElementById('historySearchInput');
+  const btnClearAllHistory   = document.getElementById('btnClearAllHistory');
+  const btnExportConversation= document.getElementById('btnExportConversation');
+  const btnVoiceInput        = document.getElementById('btnVoiceInput');
+
+  // ── History localStorage Helpers ─────────────────────────────────────────
+  function loadAllHistories() {
+    try {
+      return JSON.parse(localStorage.getItem('ishva_histories') || '[]');
+    } catch { return []; }
+  }
+
+  function saveCurrentConversation() {
+    if (currentConversationTurns.length === 0) return;
+    const all = loadAllHistories();
+    const existing = all.findIndex(h => h.id === currentConversationId);
+    const entry = {
+      id: currentConversationId,
+      title: currentConversationTurns[0]?.content?.slice(0, 60) || 'New Conversation',
+      timestamp: Date.now(),
+      turns: currentConversationTurns,
+      mode: activeMode
+    };
+    if (existing >= 0) all[existing] = entry;
+    else all.unshift(entry);
+    // Keep only last 50 conversations
+    const trimmed = all.slice(0, 50);
+    localStorage.setItem('ishva_histories', JSON.stringify(trimmed));
+    renderHistoryList();
+  }
+
+  function deleteConversation(id) {
+    const all = loadAllHistories().filter(h => h.id !== id);
+    localStorage.setItem('ishva_histories', JSON.stringify(all));
+    renderHistoryList();
+  }
+
+  function renderHistoryList(filter = '') {
+    if (!historyList) return;
+    let all = loadAllHistories();
+    if (filter) {
+      const q = filter.toLowerCase();
+      all = all.filter(h => h.title.toLowerCase().includes(q));
+    }
+    if (all.length === 0) {
+      historyList.innerHTML = '';
+      if (historyEmptyState) historyList.appendChild(historyEmptyState);
+      return;
+    }
+    historyList.innerHTML = all.map(h => {
+      const date = new Date(h.timestamp);
+      const timeStr = date.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }) +
+        ' ' + date.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+      const isActive = h.id === currentConversationId;
+      const icon = h.mode === 'code' ? '💻' : h.mode === 'image' ? '🎨' : '💬';
+      return `
+        <div class="history-item${isActive ? ' active' : ''}" data-hist-id="${h.id}">
+          <span class="history-item-icon">${icon}</span>
+          <div class="history-item-content">
+            <div class="history-item-title">${escapeHTML(h.title)}</div>
+            <div class="history-item-meta">${timeStr} &nbsp;•&nbsp; ${h.turns.length} msg${h.turns.length !== 1 ? 's' : ''}</div>
+          </div>
+          <button class="history-item-delete" data-del-id="${h.id}" title="Delete">✕</button>
+        </div>
+      `;
+    }).join('');
+
+    // Attach click handlers
+    historyList.querySelectorAll('.history-item').forEach(item => {
+      item.addEventListener('click', (e) => {
+        if (e.target.closest('.history-item-delete')) return;
+        // Future: load that conversation into chat
+        historyList.querySelectorAll('.history-item').forEach(i => i.classList.remove('active'));
+        item.classList.add('active');
+        closeSidebar();
+        showToast(`Loaded: "${item.querySelector('.history-item-title').textContent.trim()}"`);
+      });
+    });
+
+    historyList.querySelectorAll('.history-item-delete').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        deleteConversation(btn.dataset.delId);
+        showToast('Conversation deleted.');
+      });
+    });
+  }
+
+  function openSidebar() {
+    renderHistoryList();
+    historySidebar?.classList.add('open');
+    historySidebarOverlay?.classList.add('active');
+  }
+
+  function closeSidebar() {
+    historySidebar?.classList.remove('open');
+    historySidebarOverlay?.classList.remove('active');
+  }
+
+  if (btnToggleHistory) btnToggleHistory.addEventListener('click', openSidebar);
+  if (btnCloseSidebar) btnCloseSidebar.addEventListener('click', closeSidebar);
+  if (historySidebarOverlay) historySidebarOverlay.addEventListener('click', closeSidebar);
+
+  if (historySearchInput) {
+    historySearchInput.addEventListener('input', () => {
+      renderHistoryList(historySearchInput.value.trim());
+    });
+  }
+
+  if (btnClearAllHistory) {
+    btnClearAllHistory.addEventListener('click', () => {
+      if (confirm('Clear all conversation history? This cannot be undone.')) {
+        localStorage.removeItem('ishva_histories');
+        renderHistoryList();
+        showToast('All history cleared.');
+      }
+    });
+  }
+
+  // ── Export Conversation as .md ────────────────────────────────────────────
+  function exportConversationMarkdown() {
+    if (currentConversationTurns.length === 0) {
+      showToast('Nothing to export yet — start a conversation first!');
+      return;
+    }
+    const date = new Date().toISOString().slice(0, 10);
+    let md = `# Ishva AI Conversation — ${date}\n`;
+    md += `> Mode: ${activeMode} | Turns: ${currentConversationTurns.length}\n\n---\n\n`;
+    currentConversationTurns.forEach(turn => {
+      const ts = new Date(turn.timestamp).toLocaleTimeString();
+      if (turn.role === 'user') {
+        md += `## 👤 You (${ts})\n\n${turn.content}\n\n`;
+      } else {
+        md += `## ⚡ Ishva AI (${ts})\n\n${turn.content}\n\n---\n\n`;
+      }
+    });
+    const blob = new Blob([md], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ishva-conversation-${date}.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('Conversation exported as .md file!');
+  }
+
+  if (btnExportConversation) btnExportConversation.addEventListener('click', exportConversationMarkdown);
+
+  // ── Voice Input (Web Speech API) ─────────────────────────────────────────
+  let speechRecognition = null;
+  let isListening = false;
+
+  if (btnVoiceInput) {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      speechRecognition = new SpeechRecognition();
+      speechRecognition.continuous = false;
+      speechRecognition.interimResults = true;
+      speechRecognition.lang = 'en-US';
+
+      speechRecognition.onstart = () => {
+        isListening = true;
+        btnVoiceInput.classList.add('listening');
+        btnVoiceInput.title = 'Listening... (click to stop)';
+        showToast('🎤 Listening...');
+      };
+
+      speechRecognition.onresult = (e) => {
+        const transcript = Array.from(e.results)
+          .map(r => r[0].transcript).join('');
+        chatInput.value = transcript;
+        chatInput.style.height = 'auto';
+        chatInput.style.height = Math.min(chatInput.scrollHeight, 140) + 'px';
+      };
+
+      speechRecognition.onend = () => {
+        isListening = false;
+        btnVoiceInput.classList.remove('listening');
+        btnVoiceInput.title = 'Voice input (click to speak)';
+      };
+
+      speechRecognition.onerror = (e) => {
+        isListening = false;
+        btnVoiceInput.classList.remove('listening');
+        if (e.error !== 'no-speech') showToast('Voice error: ' + e.error);
+      };
+
+      btnVoiceInput.addEventListener('click', () => {
+        if (isListening) {
+          speechRecognition.stop();
+        } else {
+          speechRecognition.start();
+        }
+      });
+    } else {
+      // Browser doesn't support speech recognition
+      btnVoiceInput.title = 'Voice input not supported in this browser';
+      btnVoiceInput.style.opacity = '0.4';
+      btnVoiceInput.style.cursor = 'not-allowed';
+    }
+  }
+
+  // ── Global Keyboard Shortcuts ─────────────────────────────────────────────
+  document.addEventListener('keydown', (e) => {
+    // Ctrl+H → Toggle History Sidebar
+    if (e.ctrlKey && e.key === 'h') {
+      e.preventDefault();
+      if (historySidebar?.classList.contains('open')) closeSidebar();
+      else openSidebar();
+    }
+    // Ctrl+/ → New Chat
+    if (e.ctrlKey && e.key === '/') {
+      e.preventDefault();
+      btnNewChat?.click();
+    }
+    // Ctrl+E → Export conversation
+    if (e.ctrlKey && e.key === 'e') {
+      e.preventDefault();
+      exportConversationMarkdown();
+    }
+    // Escape → Close any open panel
+    if (e.key === 'Escape') {
+      closeSidebar();
+    }
+  });
+
+  renderHistoryList();
 
   // 1. About Ishva AI & Privacy Modal
   btnAboutIshva.addEventListener('click', () => {
@@ -424,6 +665,11 @@ export function initializeUI() {
   btnSend.addEventListener('click', submitUserMessage);
 
   btnNewChat.addEventListener('click', () => {
+    // Save current conversation before resetting
+    saveCurrentConversation();
+    // Start fresh conversation
+    currentConversationId = 'conv-' + Date.now();
+    currentConversationTurns = [];
     chatStream.innerHTML = '';
     chatStream.appendChild(welcomeHero);
     welcomeHero.style.display = 'flex';
@@ -441,6 +687,13 @@ export function initializeUI() {
     const currentAttachments = [...stagedFiles];
 
     if (!prompt && currentAttachments.length === 0) return;
+
+    // Track user turn for history
+    currentConversationTurns.push({
+      role: 'user',
+      content: prompt || '(attachments)',
+      timestamp: Date.now()
+    });
 
     if (welcomeHero && welcomeHero.style.display !== 'none') {
       welcomeHero.style.display = 'none';
@@ -623,6 +876,9 @@ export function initializeUI() {
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                 <span>Copy Answer</span>
               </button>
+              <button class="btn-retry-turn" id="${turnId}-retry" title="Regenerate this response">
+                &#9851; Retry
+              </button>
               ${intentBadge}${memBadge}${tokenBadge}${qcBadge}
             </div>
           `;
@@ -644,7 +900,56 @@ export function initializeUI() {
               setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
             });
           });
+
+          // Retry button — re-runs the same prompt
+          const retryBtn = document.getElementById(`${turnId}-retry`);
+          if (retryBtn) {
+            retryBtn.addEventListener('click', () => {
+              retryBtn.disabled = true;
+              retryBtn.textContent = 'Retrying...';
+              answerCard.innerHTML = `<div style="color:var(--text-muted);display:flex;align-items:center;gap:0.5rem;"><div class="status-dot active" style="background:var(--accent-manager);"></div><span>Ishva is regenerating...</span></div>`;
+              if (neuralCore) neuralCore.setProcessingState(true);
+              const reOrchestrator = new Orchestrator({
+                onStatusUpdate: (step) => {
+                  const stepsContainer3 = document.getElementById(`${turnId}-steps`);
+                  if (stepsContainer3) {
+                    const stepEl = document.createElement('div');
+                    stepEl.className = 'trace-step working';
+                    stepEl.innerHTML = `<span class="trace-step-icon">${step.icon}</span><span>${escapeHTML(step.text)}</span>`;
+                    stepsContainer3.appendChild(stepEl);
+                  }
+                },
+                onTokenStream: (token) => {
+                  answerCard.innerHTML = `<div class="streaming-text" id="${turnId}-restream"><span class="stream-cursor">&#9612;</span></div>`;
+                  const reStreamDiv = document.getElementById(`${turnId}-restream`);
+                  if (reStreamDiv) {
+                    reStreamDiv.innerHTML = formatMarkdownToHTML(token) + '<span class="stream-cursor">&#9612;</span>';
+                  }
+                },
+                onComplete: (retryData) => {
+                  if (neuralCore) neuralCore.setProcessingState(false);
+                  const retryContent = retryData.html || formatMarkdownToHTML(retryData.synthesis || '');
+                  answerCard.innerHTML = `${retryContent}<div class="answer-actions"><span style="font-size:0.72rem;color:var(--text-muted);">&#9851; Regenerated</span></div>`;
+                  scrollToBottom();
+                },
+                onError: (err) => {
+                  if (neuralCore) neuralCore.setProcessingState(false);
+                  answerCard.innerHTML = `<div class="error-card"><span>&#x26A0;&#xFE0F;</span><div><strong>Retry failed</strong><br/><span>${escapeHTML(err.message)}</span></div></div>`;
+                }
+              });
+              reOrchestrator.execute(prompt, activeMode, currentAttachments);
+            });
+          }
         }
+
+        // Save to history
+        currentConversationTurns.push({
+          role: 'assistant',
+          content: data.synthesis || '',
+          timestamp: Date.now()
+        });
+        saveCurrentConversation();
+
         streamBuffer = '';
         scrollToBottom();
       },
